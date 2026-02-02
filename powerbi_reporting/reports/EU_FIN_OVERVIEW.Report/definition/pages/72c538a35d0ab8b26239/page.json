@@ -1,0 +1,100 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.0.0/schema.json",
+  "name": "72c538a35d0ab8b26239",
+  "displayName": "LegalEntity_analysis",
+  "displayOption": "FitToPage",
+  "height": 720,
+  "width": 1280,
+  "objects": {
+    "outspacePane": [
+      {
+        "properties": {
+          "width": {
+            "expr": {
+              "Literal": {
+                "Value": "228L"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "visualInteractions": [
+    {
+      "source": "c03ce9a1a7d810d46882",
+      "target": "6a53e4e23604ce642c70",
+      "type": "NoFilter"
+    },
+    {
+      "source": "c03ce9a1a7d810d46882",
+      "target": "da02f7a6431777db074b",
+      "type": "NoFilter"
+    },
+    {
+      "source": "c03ce9a1a7d810d46882",
+      "target": "c965093cbb54e5abeb1a",
+      "type": "NoFilter"
+    },
+    {
+      "source": "c03ce9a1a7d810d46882",
+      "target": "468653608d47644f6436",
+      "type": "NoFilter"
+    },
+    {
+      "source": "c03ce9a1a7d810d46882",
+      "target": "779b3906b45f6ce9cac7",
+      "type": "NoFilter"
+    },
+    {
+      "source": "468653608d47644f6436",
+      "target": "c965093cbb54e5abeb1a",
+      "type": "NoFilter"
+    },
+    {
+      "source": "468653608d47644f6436",
+      "target": "da02f7a6431777db074b",
+      "type": "NoFilter"
+    },
+    {
+      "source": "468653608d47644f6436",
+      "target": "6a53e4e23604ce642c70",
+      "type": "NoFilter"
+    },
+    {
+      "source": "468653608d47644f6436",
+      "target": "c03ce9a1a7d810d46882",
+      "type": "NoFilter"
+    },
+    {
+      "source": "468653608d47644f6436",
+      "target": "779b3906b45f6ce9cac7",
+      "type": "NoFilter"
+    },
+    {
+      "source": "779b3906b45f6ce9cac7",
+      "target": "468653608d47644f6436",
+      "type": "NoFilter"
+    },
+    {
+      "source": "779b3906b45f6ce9cac7",
+      "target": "c965093cbb54e5abeb1a",
+      "type": "NoFilter"
+    },
+    {
+      "source": "779b3906b45f6ce9cac7",
+      "target": "da02f7a6431777db074b",
+      "type": "NoFilter"
+    },
+    {
+      "source": "779b3906b45f6ce9cac7",
+      "target": "6a53e4e23604ce642c70",
+      "type": "NoFilter"
+    },
+    {
+      "source": "779b3906b45f6ce9cac7",
+      "target": "c03ce9a1a7d810d46882",
+      "type": "NoFilter"
+    }
+  ]
+}

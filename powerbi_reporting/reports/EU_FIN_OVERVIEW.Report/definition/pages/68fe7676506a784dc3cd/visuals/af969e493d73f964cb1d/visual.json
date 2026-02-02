@@ -1,0 +1,240 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.4.0/schema.json",
+  "name": "af969e493d73f964cb1d",
+  "position": {
+    "x": 134.16666666666669,
+    "y": 475.83333333333337,
+    "z": 4000,
+    "height": 229.16666666666669,
+    "width": 915,
+    "tabOrder": 3000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DimTradingVenue_Info"
+                    }
+                  },
+                  "Property": "CITY"
+                }
+              },
+              "queryRef": "ISO10383_MIC.CITY",
+              "nativeQueryRef": "CITY"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DimTradingVenue_Info"
+                    }
+                  },
+                  "Property": "MIC"
+                }
+              },
+              "queryRef": "ISO10383_MIC.MIC",
+              "nativeQueryRef": "MIC"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DimTradingVenue_Info"
+                    }
+                  },
+                  "Property": "MARKET NAME-INSTITUTION DESCRIPTION"
+                }
+              },
+              "queryRef": "ISO10383_MIC.MARKET NAME-INSTITUTION DESCRIPTION",
+              "nativeQueryRef": "MARKET NAME-INSTITUTION DESCRIPTION"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Table_Mesures"
+                    }
+                  },
+                  "Property": "Listings"
+                }
+              },
+              "queryRef": "Table_Mesures.Listings",
+              "nativeQueryRef": "Listings"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Table_Mesures"
+                    }
+                  },
+                  "Property": "% Listings Venue"
+                }
+              },
+              "queryRef": "Table_Mesures.% Listings Venue",
+              "nativeQueryRef": "% Listings Venue",
+              "format": "0 %;-0 %;0 %"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "DimTradingVenue_Info"
+                  }
+                },
+                "Property": "MARKET NAME-INSTITUTION DESCRIPTION"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "columnHeaders": [
+        {
+          "properties": {
+            "bold": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "12D"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "de2a616fe5f5a3cb5726",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "DimTradingVenue"
+              }
+            },
+            "Property": "TradingVenueMIC"
+          }
+        },
+        "type": "TopN",
+        "filter": {
+          "Version": 2,
+          "From": [
+            {
+              "Name": "subquery",
+              "Expression": {
+                "Subquery": {
+                  "Query": {
+                    "Version": 2,
+                    "From": [
+                      {
+                        "Name": "d",
+                        "Entity": "DimTradingVenue",
+                        "Type": 0
+                      },
+                      {
+                        "Name": "t",
+                        "Entity": "Table_Mesures",
+                        "Type": 0
+                      }
+                    ],
+                    "Select": [
+                      {
+                        "Column": {
+                          "Expression": {
+                            "SourceRef": {
+                              "Source": "d"
+                            }
+                          },
+                          "Property": "TradingVenueMIC"
+                        },
+                        "Name": "field"
+                      }
+                    ],
+                    "OrderBy": [
+                      {
+                        "Direction": 2,
+                        "Expression": {
+                          "Measure": {
+                            "Expression": {
+                              "SourceRef": {
+                                "Source": "t"
+                              }
+                            },
+                            "Property": "Listings"
+                          }
+                        }
+                      }
+                    ],
+                    "Top": 8
+                  }
+                }
+              },
+              "Type": 2
+            },
+            {
+              "Name": "d",
+              "Entity": "DimTradingVenue",
+              "Type": 0
+            }
+          ],
+          "Where": [
+            {
+              "Condition": {
+                "In": {
+                  "Expressions": [
+                    {
+                      "Column": {
+                        "Expression": {
+                          "SourceRef": {
+                            "Source": "d"
+                          }
+                        },
+                        "Property": "TradingVenueMIC"
+                      }
+                    }
+                  ],
+                  "Table": {
+                    "SourceRef": {
+                      "Source": "subquery"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "howCreated": "User"
+      }
+    ]
+  }
+}

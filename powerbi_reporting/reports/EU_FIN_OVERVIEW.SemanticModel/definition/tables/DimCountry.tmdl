@@ -1,0 +1,68 @@
+table DimCountry
+	lineageTag: 7365091d-d2c9-49f8-b4d1-7f97ab8d57f5
+
+	column CountrySK
+		dataType: int64
+		formatString: 0
+		lineageTag: f07e12e0-7482-4af7-ba29-9b82dce2a967
+		summarizeBy: sum
+		sourceColumn: CountrySK
+
+		annotation SummarizationSetBy = Automatic
+
+	column CountryCode
+		dataType: string
+		lineageTag: d3e27a01-05ff-496d-a82b-98c731cf4edb
+		dataCategory: Country
+		summarizeBy: none
+		sourceColumn: CountryCode
+
+		annotation SummarizationSetBy = Automatic
+
+	column CountryName
+		dataType: string
+		lineageTag: cdc845b1-276b-4245-9667-c7cb1f6cd08f
+		summarizeBy: none
+		sourceColumn: CountryName
+
+		annotation SummarizationSetBy = Automatic
+
+	column FlagURL
+		dataType: string
+		lineageTag: d21b602a-b59a-4010-87f2-0a1594ff75ff
+		summarizeBy: none
+		sourceColumn: FlagURL
+
+		annotation SummarizationSetBy = Automatic
+
+	column LoadDtmUTC
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 902ccbfb-ab26-4c1e-9ade-da2cbeedd6dc
+		summarizeBy: none
+		sourceColumn: LoadDtmUTC
+
+		annotation SummarizationSetBy = Automatic
+
+	column Region
+		dataType: string
+		lineageTag: 9377c1fd-60f8-44ac-9fca-ba910bd48a2a
+		dataCategory: Country
+		summarizeBy: none
+		sourceColumn: Region
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimCountry = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database("PERSO-AJE-DELL\MSSQLSERVER01", "DWH_KHLWorldInvest"),
+				    mart_DimCountry = Source{[Schema="mart",Item="DimCountry"]}[Data]
+				in
+				    mart_DimCountry
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,70 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.4.0/schema.json",
+  "name": "d5023a29208a5ec3c8d6",
+  "position": {
+    "x": 337.60698689956331,
+    "y": 88.314410480349352,
+    "z": 4000,
+    "height": 52.541484716157207,
+    "width": 889.8515283842795,
+    "tabOrder": 4000
+  },
+  "visual": {
+    "visualType": "multiRowCard",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Table_Mesures"
+                    }
+                  },
+                  "Property": "Instruments"
+                }
+              },
+              "queryRef": "Table_Mesures.Instruments",
+              "nativeQueryRef": "Instruments"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Table_Mesures"
+                    }
+                  },
+                  "Property": "Issuers"
+                }
+              },
+              "queryRef": "Table_Mesures.Issuers",
+              "nativeQueryRef": "Issuers"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Table_Mesures"
+                  }
+                },
+                "Property": "Instruments"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

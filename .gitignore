@@ -1,0 +1,109 @@
+# ============================================
+# LOGS (now stored in AUDIT_BI database)
+# ============================================
+src/logs/
+logs/
+*.log
+audit.txt
+
+
+# ============================================
+# SQL Server Build Outputs (DACPAC projects)
+# ============================================
+bin/
+obj/
+*.dacpac
+*.refactorlog
+.sqlcodegen.json
+deployment_reports/
+backups/
+
+
+# ============================================
+# Python
+# ============================================
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+pip-log.txt
+*.pyc
+.coverage
+.pytest_cache/
+
+
+# ============================================
+# Configuration (Secrets)
+# ============================================
+config/config.ini
+!config/config.template.ini
+config/local.ini
+config/*.secret.ini
+*.secrets
+.env
+
+
+# ============================================
+# Data Files (Large CSV and all content)
+# ============================================
+data/
+!data/.gitkeep
+
+
+
+
+# ============================================
+# IDE & Editor
+# ============================================
+.vscode/
+.vs/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+.sublime-project
+.sublime-workspace
+
+
+# ============================================
+# PowerBI
+# ============================================
+*.pbitd
+.Analysis/
+.platform
+
+
+# ============================================
+# Database Backups
+# ============================================
+*.bak
+*.bak.zip
+backups/
+*.dacpac.backup
+
+
+# ============================================
+# OS Files
+# ============================================
+.DS_Store
+Thumbs.db
+.AppleDouble
+.LSOverride
+
+
+# ============================================
+# Temp Files
+# ============================================
+*.tmp
+*.temp
+temp/
+*.cache
+*.pdb

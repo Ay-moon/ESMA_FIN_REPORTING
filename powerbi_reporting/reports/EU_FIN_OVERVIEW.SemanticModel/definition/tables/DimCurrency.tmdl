@@ -1,0 +1,34 @@
+table DimCurrency
+	lineageTag: 3ce882b7-1bc6-4162-b991-a292bb4433c1
+
+	column CurrencySK
+		dataType: int64
+		formatString: 0
+		lineageTag: 891b917b-829b-48c6-a22e-57188a3f45ec
+		summarizeBy: none
+		sourceColumn: CurrencySK
+
+		annotation SummarizationSetBy = Automatic
+
+	column CurrencyCode
+		dataType: string
+		lineageTag: 64a63548-3d73-4a56-a3f3-94fee970a8cb
+		summarizeBy: none
+		sourceColumn: CurrencyCode
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimCurrency = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database("PERSO-AJE-DELL\MSSQLSERVER01", "DWH_KHLWorldInvest"),
+				    mart_DimCurrency = Source{[Schema="mart",Item="DimCurrency"]}[Data],
+				    #"Removed Columns" = Table.RemoveColumns(mart_DimCurrency,{"mart.FactInstrumentSnapshot", "LoadDtmUTC"})
+				in
+				    #"Removed Columns"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

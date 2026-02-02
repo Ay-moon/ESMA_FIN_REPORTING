@@ -1,0 +1,130 @@
+table DimLeiDate
+	lineageTag: c81688f4-9f6e-467f-944e-b5e455b1b3ad
+
+	column Date
+		formatString: General Date
+		lineageTag: 13a0d3aa-1ae6-49ab-bb1d-6ec0e8cc075d
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Date]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Year
+		formatString: 0
+		lineageTag: ca882fad-b620-4cc4-af49-ae35d0c669a0
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Year]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Month
+		formatString: 0
+		lineageTag: b22c34db-d9fc-471b-98c8-8672288dcd4d
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Month]
+
+		annotation SummarizationSetBy = Automatic
+
+	column MonthName
+		lineageTag: 6d901c9b-c131-4311-bd5d-5fa8ab30761c
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [MonthName]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Quarter
+		lineageTag: 3a9ea0b3-7460-4e45-9c58-ab4adb50e889
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Quarter]
+
+		annotation SummarizationSetBy = Automatic
+
+	column YearMonth
+		lineageTag: e1b1da3c-79d2-433c-b8b4-a52165dca255
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [YearMonth]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Day
+		formatString: 0
+		lineageTag: f621d552-45a3-4c6d-9cc8-33775a4138bc
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Day]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Weekday
+		formatString: 0
+		lineageTag: e09d7c34-2c60-4ced-925c-179952cab9fa
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Weekday]
+
+		annotation SummarizationSetBy = Automatic
+
+	column WeekdayName
+		lineageTag: 2a4f3d1c-593f-4605-8baa-b2d55bc3b4e8
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [WeekdayName]
+
+		annotation SummarizationSetBy = Automatic
+
+	hierarchy 'Date Hierarchy'
+		lineageTag: b9379782-3a30-48f3-b70f-74d94068f4f4
+
+		level Year
+			lineageTag: 7ec45fdc-f5ac-4f99-bcd4-ebba0ee0c105
+			column: Year
+
+		level Quarter
+			lineageTag: 51cacced-90e5-4cb3-9abe-4614cf9d92f5
+			column: Quarter
+
+		level Month
+			lineageTag: 13e1a9bf-da61-459b-ad63-91a5fee20bc0
+			column: MonthName
+
+		level Day
+			lineageTag: 3ab5441e-cc8f-47d9-b378-9573e536799d
+			column: Day
+
+	partition DimLeiDate = calculated
+		mode: import
+		source = ```
+				
+				VAR MinDate =
+				    CALCULATE (
+				        MIN ( DimLeiGolderSrc[InitialRegistrationDate] ),
+				        NOT ISBLANK ( DimLeiGolderSrc[InitialRegistrationDate] )
+				    )
+				VAR MaxDate =
+				    CALCULATE (
+				        MAX ( DimLeiGolderSrc[InitialRegistrationDate] ),
+				        NOT ISBLANK ( DimLeiGolderSrc[InitialRegistrationDate] )
+				    )
+				RETURN
+				ADDCOLUMNS (
+				    CALENDAR ( MinDate, MaxDate ),
+				    "Year", YEAR ( [Date] ),
+				    "Month", MONTH ( [Date] ),
+				    "MonthName", FORMAT ( [Date], "MMMM" ),
+				    "Quarter", "Q" & FORMAT ( [Date], "Q" ),
+				    "YearMonth", FORMAT ( [Date], "YYYY-MM" ),
+				    "Day", DAY ( [Date] ),
+				    "Weekday", WEEKDAY ( [Date], 2 ),
+				    "WeekdayName", FORMAT ( [Date], "dddd" )
+				)
+				
+				```
+
+	annotation PBI_Id = 3f75307ee4a748c181bdc9d1ba221910
+

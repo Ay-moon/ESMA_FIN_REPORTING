@@ -1,0 +1,34 @@
+table Agg_Issuer_Instruments
+	lineageTag: d0229718-d70b-4ed1-a34d-f913c93bf2fb
+
+	column IssuerSK
+		formatString: 0
+		lineageTag: aaf2b629-7662-4576-a917-a5c1bc2f906d
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: DimIssuer[IssuerSK]
+
+		annotation SummarizationSetBy = Automatic
+
+	column InstrumentsCnt
+		formatString: 0
+		lineageTag: cb22ec1d-f5c9-453a-950a-8d8608f80879
+		summarizeBy: sum
+		isNameInferred
+		sourceColumn: [InstrumentsCnt]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Agg_Issuer_Instruments = calculated
+		mode: import
+		source = ```
+				
+				SUMMARIZECOLUMNS(
+				    DimIssuer[IssuerSK],
+				    "InstrumentsCnt", CALCULATE( [Instruments] )
+				)
+				
+				```
+
+	annotation PBI_Id = 35b8c6737a134ffea9d49016ad6ff403
+

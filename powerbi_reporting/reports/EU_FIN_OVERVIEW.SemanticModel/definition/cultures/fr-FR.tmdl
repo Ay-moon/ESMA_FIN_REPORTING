@@ -1,0 +1,53 @@
+cultureInfo fr-FR
+
+	linguisticMetadata =
+			{
+			  "Version": "2.0.0",
+			  "Language": "en-US",
+			  "Entities": {
+			    "table_mesures.listings": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Table_Mesures",
+			          "ConceptualProperty": "Listings"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Listings": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "dimtradingvenue.tradingvenuemic": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "DimTradingVenue",
+			          "ConceptualProperty": "TradingVenueMIC"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "TradingVenue MIC": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    }
+			  }
+			}
+		contentType: json
+

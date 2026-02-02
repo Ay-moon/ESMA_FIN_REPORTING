@@ -1,0 +1,4 @@
+EVALUATE
+	ROW(
+		"v__Instruments_Top10_Issuers", 'Table_Mesures'[% Instruments Top10 Issuers]
+	)

@@ -1,0 +1,30 @@
+model Model
+	culture: fr-FR
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: fr-FR
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 0
+
+annotation PBI_QueryOrder = ["DimCFI","DimCurrency","DimIssuer","DimTradingVenue","FactInstrumentSnapshot","DimTradingVenue_Info","DimInstrument","DimCountry","DimCountry_MIC","DimLeiGolderSrc"]
+
+annotation PBI_ProTooling = ["DaxQueryView_Desktop","DevMode","MCP-PBIModeling"]
+
+ref table DimCFI
+ref table DimCurrency
+ref table DimIssuer
+ref table DimTradingVenue
+ref table Table_Mesures
+ref table FactInstrumentSnapshot
+ref table DimTradingVenue_Info
+ref table DimInstrument
+ref table DimCountry
+ref table DimCountry_MIC
+ref table DimLeiGolderSrc
+ref table DimLeiDate
+ref table Agg_Issuer_Instruments
+
+ref cultureInfo fr-FR
+

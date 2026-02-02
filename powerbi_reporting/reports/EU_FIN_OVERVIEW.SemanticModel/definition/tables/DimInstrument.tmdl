@@ -1,0 +1,256 @@
+table DimInstrument
+	lineageTag: 48745ddb-9a11-4301-8dea-4a2af5143930
+
+	column InstrumentSK
+		dataType: int64
+		isNullable: false
+		formatString: 0
+		sourceProviderType: bigint
+		lineageTag: 6072f2d1-711a-43ea-9f5c-0302a3f09c84
+		summarizeBy: none
+		sourceColumn: InstrumentSK
+
+		annotation SummarizationSetBy = Automatic
+
+	column ISIN
+		dataType: string
+		isNullable: false
+		sourceProviderType: nvarchar(12)
+		lineageTag: c05fe368-2347-418b-ad5f-0bf74b5902b2
+		summarizeBy: none
+		sourceColumn: ISIN
+
+		annotation SummarizationSetBy = Automatic
+
+	column FullName
+		dataType: string
+		sourceProviderType: nvarchar(500)
+		lineageTag: 016d04cf-6e65-4008-9d0f-ab828dad2212
+		summarizeBy: none
+		sourceColumn: FullName
+
+		annotation SummarizationSetBy = Automatic
+
+	column ShortName
+		dataType: string
+		sourceProviderType: nvarchar(200)
+		lineageTag: f63f2d03-89d3-4875-9be5-33f153ed965e
+		summarizeBy: none
+		sourceColumn: ShortName
+
+		annotation SummarizationSetBy = Automatic
+
+	column CFI
+		dataType: string
+		sourceProviderType: nvarchar(20)
+		lineageTag: 4b72423f-5938-4287-9ccb-edaf49c5aa87
+		summarizeBy: none
+		sourceColumn: CFI
+
+		annotation SummarizationSetBy = Automatic
+
+	column CommodityDerivativeInd
+		dataType: string
+		sourceProviderType: nvarchar(10)
+		lineageTag: bde186c6-a056-4942-85de-5b928b346dc9
+		summarizeBy: none
+		sourceColumn: CommodityDerivativeInd
+
+		annotation SummarizationSetBy = Automatic
+
+	column NotionalCurrency
+		dataType: string
+		sourceProviderType: nvarchar(3)
+		lineageTag: d8d29723-55ae-4675-b074-31f7635fac4e
+		summarizeBy: none
+		sourceColumn: NotionalCurrency
+
+		annotation SummarizationSetBy = Automatic
+
+	column IssuerLEI
+		dataType: string
+		sourceProviderType: nvarchar(20)
+		lineageTag: 553b0b20-7b5c-4eec-83ca-106088c149ea
+		summarizeBy: none
+		sourceColumn: IssuerLEI
+
+		annotation SummarizationSetBy = Automatic
+
+	column ValidFromDate
+		dataType: dateTime
+		isNullable: false
+		formatString: Long Date
+		sourceProviderType: date
+		lineageTag: e1c57011-be12-4725-a354-5316553cde2c
+		summarizeBy: none
+		sourceColumn: ValidFromDate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column ValidToDate
+		dataType: dateTime
+		formatString: Long Date
+		sourceProviderType: date
+		lineageTag: 9dbb80d6-6086-4a5b-8497-89c481512bd2
+		summarizeBy: none
+		sourceColumn: ValidToDate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column IsCurrent
+		dataType: boolean
+		isNullable: false
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		sourceProviderType: bit
+		lineageTag: f9444a6c-b75c-45f2-8d48-1ae785a41d03
+		summarizeBy: none
+		sourceColumn: IsCurrent
+
+		annotation SummarizationSetBy = Automatic
+
+	column RecordSource
+		dataType: string
+		isHidden
+		isNullable: false
+		sourceProviderType: nvarchar(100)
+		lineageTag: b378fed3-cb1a-47bf-a3c3-60fa52d20676
+		summarizeBy: none
+		sourceColumn: RecordSource
+
+		annotation SummarizationSetBy = Automatic
+
+	column LoadDtmUTC
+		dataType: dateTime
+		isHidden
+		isNullable: false
+		formatString: General Date
+		sourceProviderType: datetime2
+		lineageTag: c5d5b60d-9a38-4487-8be5-60db6d0bb8b5
+		summarizeBy: none
+		sourceColumn: LoadDtmUTC
+
+		annotation SummarizationSetBy = Automatic
+
+	column CmdtyBaseProduct
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(50)
+		lineageTag: 945a21e8-957c-45e4-813d-98ba6796b0ef
+		summarizeBy: none
+		sourceColumn: CmdtyBaseProduct
+
+		annotation SummarizationSetBy = Automatic
+
+	column CmdtySubProduct
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(50)
+		lineageTag: a4efe96b-3bff-46bf-b18e-d3afbfa28592
+		summarizeBy: none
+		sourceColumn: CmdtySubProduct
+
+		annotation SummarizationSetBy = Automatic
+
+	column CmdtyTransactionType
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(50)
+		lineageTag: b2cc8274-6111-4995-825f-74101f321fbb
+		summarizeBy: none
+		sourceColumn: CmdtyTransactionType
+
+		annotation SummarizationSetBy = Automatic
+
+	column CmdtyFinalPriceType
+		dataType: string
+		isHidden
+		sourceProviderType: varchar(50)
+		lineageTag: 559d1147-4ec1-44aa-bcde-65146712782f
+		summarizeBy: none
+		sourceColumn: CmdtyFinalPriceType
+
+		annotation SummarizationSetBy = Automatic
+
+	column TotalIssuedNominalAmount
+		dataType: double
+		sourceProviderType: decimal(38, 10)
+		lineageTag: 2135e662-8377-41ee-9730-d2c41a77de8c
+		summarizeBy: none
+		sourceColumn: TotalIssuedNominalAmount
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column TotalIssuedNominalAmountCcy
+		dataType: string
+		sourceProviderType: varchar(10)
+		lineageTag: eb1666a7-1ab3-4f95-98db-5b89786f8fbe
+		summarizeBy: none
+		sourceColumn: TotalIssuedNominalAmountCcy
+
+		annotation SummarizationSetBy = Automatic
+
+	column MaturityDate
+		dataType: dateTime
+		formatString: Long Date
+		sourceProviderType: date
+		lineageTag: bc4ded7f-22fd-4ecb-b9db-9a63b2b30a11
+		summarizeBy: none
+		sourceColumn: MaturityDate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column NominalValuePerUnit
+		dataType: double
+		sourceProviderType: decimal(38, 10)
+		lineageTag: f8936cd5-3bf3-4cdc-84a1-c765133b1a5d
+		summarizeBy: none
+		sourceColumn: NominalValuePerUnit
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column NominalValuePerUnitCcy
+		dataType: string
+		sourceProviderType: varchar(10)
+		lineageTag: 1a10a8cd-503f-4eec-af26-baa6b8bbc8ec
+		summarizeBy: none
+		sourceColumn: NominalValuePerUnitCcy
+
+		annotation SummarizationSetBy = Automatic
+
+	column InstrumentCategory
+		dataType: string
+		isNullable: false
+		sourceProviderType: varchar(10)
+		lineageTag: 031e3922-d110-41aa-bd2e-e7c3f21dcebc
+		summarizeBy: none
+		sourceColumn: InstrumentCategory
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimInstrument = m
+		mode: directQuery
+		source =
+				let
+				    Source = Sql.Database("PERSO-AJE-DELL\MSSQLSERVER01", "DWH_KHLWorldInvest"),
+				    mart_DimInstrument_SCD2 = Source{[Schema="mart",Item="DimInstrument_SCD2"]}[Data],
+				    #"Removed Columns" = Table.RemoveColumns(mart_DimInstrument_SCD2,{"mart.FactInstrumentSnapshot"}),
+				    #"Added Custom" = Table.AddColumn(#"Removed Columns", "InstrumentCategory", each if [CFI] <> null and Text.Start([CFI], 1) = "D"
+				then "DEBT"
+				else "DERIVATIVE")
+				in
+				    #"Added Custom"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

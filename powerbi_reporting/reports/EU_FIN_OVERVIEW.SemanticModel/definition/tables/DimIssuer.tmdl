@@ -1,0 +1,168 @@
+table DimIssuer
+	lineageTag: 7b04b605-49ae-4704-a7f0-4e542452fe41
+
+	column IssuerSK
+		dataType: int64
+		formatString: 0
+		lineageTag: 1ee1e5c5-e8e3-4264-9b0f-cbbdb90784d8
+		summarizeBy: none
+		sourceColumn: IssuerSK
+
+		annotation SummarizationSetBy = Automatic
+
+	column IssuerLEI
+		dataType: string
+		lineageTag: 1b863e06-0584-4be3-bb97-8424dffb4fbf
+		summarizeBy: none
+		sourceColumn: IssuerLEI
+
+		annotation SummarizationSetBy = Automatic
+
+	column LegalName
+		dataType: string
+		lineageTag: 1394d415-735e-4651-bd48-0f049fbcab75
+		summarizeBy: none
+		sourceColumn: LegalName
+
+		annotation SummarizationSetBy = Automatic
+
+	column LegalAddress_FirstAddressLine
+		dataType: string
+		isHidden
+		lineageTag: b7c02509-21a5-48c3-ba85-8bafbe42ad77
+		summarizeBy: none
+		sourceColumn: LegalAddress_FirstAddressLine
+
+		annotation SummarizationSetBy = Automatic
+
+	column LegalAddress_City
+		dataType: string
+		lineageTag: ba6f186a-c939-4344-b114-2c803202dab8
+		summarizeBy: none
+		sourceColumn: LegalAddress_City
+
+		annotation SummarizationSetBy = Automatic
+
+	column LegalAddress_Region
+		dataType: string
+		lineageTag: fd239a63-49fc-4ee4-abdc-1af9606d09ec
+		summarizeBy: none
+		sourceColumn: LegalAddress_Region
+
+		annotation SummarizationSetBy = Automatic
+
+	column LegalAddress_Country
+		dataType: string
+		lineageTag: dbd8c970-4e3d-4e81-aa4f-b4216a4539a8
+		summarizeBy: none
+		sourceColumn: LegalAddress_Country
+
+		annotation SummarizationSetBy = Automatic
+
+	column LegalAddress_PostalCode
+		dataType: string
+		lineageTag: af7675a0-94be-416b-afc7-926b5fc0535e
+		summarizeBy: none
+		sourceColumn: LegalAddress_PostalCode
+
+		annotation SummarizationSetBy = Automatic
+
+	column HeadquartersAddress_FirstAddressLine
+		dataType: string
+		isHidden
+		lineageTag: 04ccc394-91b9-49b1-b903-e097e5c31f07
+		summarizeBy: none
+		sourceColumn: HeadquartersAddress_FirstAddressLine
+
+		annotation SummarizationSetBy = Automatic
+
+	column HeadquartersAddress_City
+		dataType: string
+		lineageTag: 59477850-3c16-43ff-9241-4c7e852b6404
+		summarizeBy: none
+		sourceColumn: HeadquartersAddress_City
+
+		annotation SummarizationSetBy = Automatic
+
+	column HeadquartersAddress_Country
+		dataType: string
+		lineageTag: 95d133b6-117a-44b4-9bee-2cec025c02f0
+		summarizeBy: none
+		sourceColumn: HeadquartersAddress_Country
+
+		annotation SummarizationSetBy = Automatic
+
+	column HeadquartersAddress_PostalCode
+		dataType: string
+		isHidden
+		lineageTag: b38498ee-b1c7-47c3-aab8-2921c0debfac
+		summarizeBy: none
+		sourceColumn: HeadquartersAddress_PostalCode
+
+		annotation SummarizationSetBy = Automatic
+
+	column LegalJurisdiction
+		dataType: string
+		lineageTag: fdf1ecf8-f0c7-4edb-bf7c-48908b5fd51c
+		summarizeBy: none
+		sourceColumn: LegalJurisdiction
+
+		annotation SummarizationSetBy = Automatic
+
+	column EntityCategory
+		dataType: string
+		lineageTag: fdc984db-77c3-435b-bf4e-78487b840af3
+		summarizeBy: none
+		sourceColumn: EntityCategory
+
+		annotation SummarizationSetBy = Automatic
+
+	column EntityStatus
+		dataType: string
+		lineageTag: af356c92-fd77-4fea-aa99-703917bb7062
+		summarizeBy: none
+		sourceColumn: EntityStatus
+
+		annotation SummarizationSetBy = Automatic
+
+	column LegalEntityEvent_1_group_type
+		dataType: string
+		isHidden
+		lineageTag: 950e77c3-2aef-43b0-a391-8af829170a42
+		summarizeBy: none
+		sourceColumn: LegalEntityEvent_1_group_type
+
+		annotation SummarizationSetBy = Automatic
+
+	column InitialRegistrationDate
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: c8785bff-5999-401a-a747-264ba0c0be8e
+		summarizeBy: none
+		sourceColumn: InitialRegistrationDate
+
+		annotation SummarizationSetBy = Automatic
+
+	column LastUpdateDate
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: dc15d547-6f11-4380-b50c-873d7a7eec0f
+		summarizeBy: none
+		sourceColumn: LastUpdateDate
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimIssuer = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database("PERSO-AJE-DELL\MSSQLSERVER01", "DWH_KHLWorldInvest"),
+				    mart_DimIssuer = Source{[Schema="mart",Item="DimIssuer"]}[Data],
+				    #"Removed Columns" = Table.RemoveColumns(mart_DimIssuer,{"mart.FactInstrumentSnapshot", "LoadDtmUTC"})
+				in
+				    #"Removed Columns"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

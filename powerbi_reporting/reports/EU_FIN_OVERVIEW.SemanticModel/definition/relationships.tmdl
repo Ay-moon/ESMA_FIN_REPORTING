@@ -1,0 +1,50 @@
+relationship 9c208464-68fa-bede-8a15-bf653836b66d
+	fromColumn: FactInstrumentSnapshot.TradingVenueSK
+	toColumn: DimTradingVenue.TradingVenueSK
+
+relationship ae11d3b9-a571-b51b-3016-2ebfe694a62c
+	fromColumn: FactInstrumentSnapshot.CurrencySK
+	toColumn: DimCurrency.CurrencySK
+
+relationship f7d81cca-469d-b49d-5d29-b0e4afe5f7a9
+	fromColumn: FactInstrumentSnapshot.CFISK
+	toColumn: DimCFI.CFISK
+
+relationship 9134094c-7a9e-e3c0-4fbd-8e8d504e4978
+	fromColumn: FactInstrumentSnapshot.IssuerSK
+	toColumn: DimIssuer.IssuerSK
+
+relationship e3e36371-2cca-7ffe-e8af-6f7af6d56646
+	crossFilteringBehavior: bothDirections
+	fromCardinality: one
+	fromColumn: DimTradingVenue.TradingVenueMIC
+	toColumn: DimTradingVenue_Info.MIC
+
+relationship 60421d49-26ed-6032-82dc-023dabdfdb53
+	fromColumn: FactInstrumentSnapshot.InstrumentSK
+	toColumn: DimInstrument.InstrumentSK
+
+relationship b6f000d0-fc9c-9db1-386c-7ac1e656ce68
+	crossFilteringBehavior: bothDirections
+	securityFilteringBehavior: bothDirections
+	fromColumn: DimIssuer.LegalAddress_Country
+	toColumn: DimCountry.CountryCode
+
+relationship 5f98d36c-3c8c-04b1-5d78-8862b5fb93ec
+	fromColumn: DimTradingVenue_Info.'ISO COUNTRY CODE (ISO 3166)'
+	toColumn: DimCountry_MIC.CountryCode
+
+relationship 2e64533f-c1a4-d8b0-00df-ac5ea2cb0d0c
+	fromColumn: DimLeiGolderSrc.InitialRegistrationDate
+	toColumn: DimLeiDate.Date
+
+relationship 5b8fb938-3f57-c637-db73-3e8a475750ca
+	fromColumn: DimLeiGolderSrc.HeadquartersAddress_Country
+	toColumn: DimCountry.CountryCode
+
+relationship 9c545505-e184-57ea-b782-0fcaf655ee58
+	crossFilteringBehavior: bothDirections
+	fromCardinality: one
+	fromColumn: DimIssuer.IssuerSK
+	toColumn: Agg_Issuer_Instruments.IssuerSK
+

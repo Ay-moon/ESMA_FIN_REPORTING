@@ -1,0 +1,152 @@
+table DimTradingVenue_Info
+	lineageTag: 777c4fd3-493e-4ffd-a6a0-437b9c3bc6b7
+
+	column MIC
+		dataType: string
+		lineageTag: c3051d1f-f0eb-4b28-9dd6-631b833daefa
+		summarizeBy: none
+		sourceColumn: MIC
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'OPERATING MIC'
+		dataType: string
+		lineageTag: 5e89a611-9e85-494d-862b-3fd996361169
+		summarizeBy: none
+		sourceColumn: OPERATING MIC
+
+		annotation SummarizationSetBy = Automatic
+
+	column OPRT/SGMT
+		dataType: string
+		lineageTag: 9307da5e-6c25-41f4-8070-4afe39cc7684
+		summarizeBy: none
+		sourceColumn: OPRT/SGMT
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'MARKET NAME-INSTITUTION DESCRIPTION'
+		dataType: string
+		lineageTag: d2367887-68f0-4188-af19-8385f6b3611a
+		summarizeBy: none
+		sourceColumn: MARKET NAME-INSTITUTION DESCRIPTION
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'LEGAL ENTITY NAME'
+		dataType: string
+		lineageTag: af9b1798-3bbb-4aa7-ada4-7c8b04fb10f8
+		summarizeBy: none
+		sourceColumn: LEGAL ENTITY NAME
+
+		annotation SummarizationSetBy = Automatic
+
+	column LEI
+		dataType: string
+		lineageTag: 5d6ae8e5-bc08-494b-87f7-3e21540acc04
+		summarizeBy: none
+		sourceColumn: LEI
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'MARKET CATEGORY CODE'
+		dataType: string
+		lineageTag: 27bf6bb4-0b8e-41ad-84d5-524d4e4b935f
+		summarizeBy: none
+		sourceColumn: MARKET CATEGORY CODE
+
+		annotation SummarizationSetBy = Automatic
+
+	column ACRONYM
+		dataType: string
+		lineageTag: b7cf522c-27c8-43c7-929c-6e2bdf27db99
+		summarizeBy: none
+		sourceColumn: ACRONYM
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'ISO COUNTRY CODE (ISO 3166)'
+		dataType: string
+		lineageTag: 8a0e7ba9-a8a6-4960-8d91-2ab89f3d4cde
+		summarizeBy: none
+		sourceColumn: ISO COUNTRY CODE (ISO 3166)
+
+		annotation SummarizationSetBy = Automatic
+
+	column CITY
+		dataType: string
+		lineageTag: 210fb30f-e8e3-43eb-b493-442127a24152
+		summarizeBy: none
+		sourceColumn: CITY
+
+		annotation SummarizationSetBy = Automatic
+
+	column WEBSITE
+		dataType: string
+		lineageTag: a4ec80ba-b911-4ebe-b7b4-e0f98438c049
+		summarizeBy: none
+		sourceColumn: WEBSITE
+
+		annotation SummarizationSetBy = Automatic
+
+	column STATUS
+		dataType: string
+		lineageTag: b2a34488-c8c4-49ee-8442-38e93ccd3ec6
+		summarizeBy: none
+		sourceColumn: STATUS
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'CREATION DATE'
+		dataType: string
+		lineageTag: 0efb446a-5d01-4291-813f-c9b48822f5ce
+		summarizeBy: none
+		sourceColumn: CREATION DATE
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'LAST UPDATE DATE'
+		dataType: string
+		lineageTag: fc5ee66c-7749-4d26-9ead-77f4f7030e35
+		summarizeBy: none
+		sourceColumn: LAST UPDATE DATE
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'LAST VALIDATION DATE'
+		dataType: string
+		lineageTag: 8a2b1b92-f282-4f4d-a78c-c8ebb4b12fcd
+		summarizeBy: none
+		sourceColumn: LAST VALIDATION DATE
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'EXPIRY DATE'
+		dataType: string
+		lineageTag: 679c921d-6e57-4752-9125-ed41d5c80d77
+		summarizeBy: none
+		sourceColumn: EXPIRY DATE
+
+		annotation SummarizationSetBy = Automatic
+
+	column COMMENTS
+		dataType: string
+		lineageTag: 42fa384d-11da-4616-8279-026ed4735340
+		summarizeBy: none
+		sourceColumn: COMMENTS
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimTradingVenue_Info = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database("PERSO-AJE-DELL\MSSQLSERVER01", "DWH_KHLWorldInvest"),
+				    mart_ISO10383_MIC = Source{[Schema="mart",Item="ISO10383_MIC"]}[Data]
+				in
+				    mart_ISO10383_MIC
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

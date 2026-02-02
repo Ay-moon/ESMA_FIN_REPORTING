@@ -1,0 +1,150 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.0.0/schema.json",
+  "name": "76fbfa6050a6c9bcd980",
+  "displayName": "Instrument & Issuer",
+  "displayOption": "FitToPage",
+  "height": 720,
+  "width": 1280,
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "65d1d8ee8c5e6b7512d7",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "DimCountry"
+              }
+            },
+            "Property": "Region"
+          }
+        },
+        "type": "Categorical",
+        "filter": {
+          "Version": 2,
+          "From": [
+            {
+              "Name": "d",
+              "Entity": "DimCountry",
+              "Type": 0
+            }
+          ],
+          "Where": [
+            {
+              "Condition": {
+                "In": {
+                  "Expressions": [
+                    {
+                      "Column": {
+                        "Expression": {
+                          "SourceRef": {
+                            "Source": "d"
+                          }
+                        },
+                        "Property": "Region"
+                      }
+                    }
+                  ],
+                  "Values": [
+                    [
+                      {
+                        "Literal": {
+                          "Value": "'AFRICA'"
+                        }
+                      }
+                    ],
+                    [
+                      {
+                        "Literal": {
+                          "Value": "'AMERICAS'"
+                        }
+                      }
+                    ],
+                    [
+                      {
+                        "Literal": {
+                          "Value": "'ASIA'"
+                        }
+                      }
+                    ],
+                    [
+                      {
+                        "Literal": {
+                          "Value": "'EUROPE'"
+                        }
+                      }
+                    ],
+                    [
+                      {
+                        "Literal": {
+                          "Value": "'MIDDLE EAST'"
+                        }
+                      }
+                    ],
+                    [
+                      {
+                        "Literal": {
+                          "Value": "'OCEANIA'"
+                        }
+                      }
+                    ]
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "howCreated": "User",
+        "objects": {
+          "general": [
+            {
+              "properties": {}
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "objects": {
+    "outspacePane": [
+      {
+        "properties": {
+          "width": {
+            "expr": {
+              "Literal": {
+                "Value": "406L"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "visualInteractions": [
+    {
+      "source": "ef115366112c0b470c13",
+      "target": "59de99d4b82a6a3b150c",
+      "type": "NoFilter"
+    },
+    {
+      "source": "ef115366112c0b470c13",
+      "target": "c918c78810397934eadd",
+      "type": "DataFilter"
+    },
+    {
+      "source": "ef115366112c0b470c13",
+      "target": "804822c20e1ca6cd4035",
+      "type": "DataFilter"
+    },
+    {
+      "source": "ef115366112c0b470c13",
+      "target": "ae01baf217017ed31700",
+      "type": "DataFilter"
+    },
+    {
+      "source": "ef115366112c0b470c13",
+      "target": "2d592ead943439204662",
+      "type": "NoFilter"
+    }
+  ]
+}

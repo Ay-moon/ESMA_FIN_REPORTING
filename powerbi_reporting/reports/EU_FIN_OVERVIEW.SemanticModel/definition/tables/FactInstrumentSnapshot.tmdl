@@ -1,0 +1,86 @@
+table FactInstrumentSnapshot
+	lineageTag: 3c804d87-4414-48bb-8dfc-4f9a7dbad2d2
+
+	column SnapshotDate
+		dataType: dateTime
+		isNullable: false
+		formatString: General Date
+		sourceProviderType: date
+		lineageTag: 05719569-3584-497a-b665-25962af5aba9
+		summarizeBy: none
+		sourceColumn: SnapshotDate
+
+		annotation SummarizationSetBy = Automatic
+
+	column CurrencySK
+		dataType: int64
+		formatString: 0
+		sourceProviderType: int
+		lineageTag: d506c21f-6869-45e0-8a79-44d7eccd7337
+		summarizeBy: none
+		sourceColumn: CurrencySK
+
+		annotation SummarizationSetBy = Automatic
+
+	column CFISK
+		dataType: int64
+		formatString: 0
+		sourceProviderType: int
+		lineageTag: 81871ed1-4407-4377-a2be-27a1c078b425
+		summarizeBy: none
+		sourceColumn: CFISK
+
+		annotation SummarizationSetBy = Automatic
+
+	column IssuerSK
+		dataType: int64
+		formatString: 0
+		sourceProviderType: int
+		lineageTag: 7ea61cbe-d210-462c-8eb3-e9bf1707417c
+		summarizeBy: none
+		sourceColumn: IssuerSK
+
+		annotation SummarizationSetBy = Automatic
+
+	column TradingVenueSK
+		dataType: int64
+		formatString: 0
+		sourceProviderType: int
+		lineageTag: 082d5033-53ca-48fe-9a22-e99067da1da0
+		summarizeBy: none
+		sourceColumn: TradingVenueSK
+
+		annotation SummarizationSetBy = Automatic
+
+	column InstrumentSK
+		dataType: int64
+		formatString: 0
+		sourceProviderType: bigint
+		lineageTag: 08bbce80-92f8-40b9-9fe7-200cc144ee03
+		summarizeBy: none
+		sourceColumn: InstrumentSK
+
+		annotation SummarizationSetBy = Automatic
+
+	column InstrumentListingSK
+		dataType: int64
+		formatString: 0
+		sourceProviderType: bigint
+		lineageTag: e9af23a1-869e-4dd0-b555-59ea7600dd4e
+		summarizeBy: sum
+		sourceColumn: InstrumentListingSK
+
+		annotation SummarizationSetBy = Automatic
+
+	partition FactInstrumentSnapshot = m
+		mode: directQuery
+		source =
+				let
+				    Source = Sql.Database("PERSO-AJE-DELL\MSSQLSERVER01", "DWH_KHLWorldInvest", [Query="select * from [mart].[vw_FactInstrumentSnapshot_Latest]", CreateNavigationProperties=false])
+				in
+				    Source
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

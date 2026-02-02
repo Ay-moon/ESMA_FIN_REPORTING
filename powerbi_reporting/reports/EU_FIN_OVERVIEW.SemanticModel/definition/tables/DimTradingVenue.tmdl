@@ -1,0 +1,34 @@
+table DimTradingVenue
+	lineageTag: 969edba7-2e1d-4661-a774-87978393b9ce
+
+	column TradingVenueSK
+		dataType: int64
+		formatString: 0
+		lineageTag: 33ea9bba-9557-441e-a30d-94d7c1f1a3f1
+		summarizeBy: none
+		sourceColumn: TradingVenueSK
+
+		annotation SummarizationSetBy = Automatic
+
+	column TradingVenueMIC
+		dataType: string
+		lineageTag: 99f570aa-d40d-4660-9eac-d9feae0b4a48
+		summarizeBy: none
+		sourceColumn: TradingVenueMIC
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimTradingVenue = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database("PERSO-AJE-DELL\MSSQLSERVER01", "DWH_KHLWorldInvest"),
+				    mart_DimTradingVenue = Source{[Schema="mart",Item="DimTradingVenue"]}[Data],
+				    #"Removed Columns" = Table.RemoveColumns(mart_DimTradingVenue,{"mart.FactInstrumentSnapshot", "LoadDtmUTC"})
+				in
+				    #"Removed Columns"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

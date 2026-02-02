@@ -1,0 +1,338 @@
+table Table_Mesures
+	lineageTag: 709a186c-92d9-4f93-a887-5454c3095ee9
+
+	measure 'Overview Subtitle' = ```
+			
+			VAR MinDate =
+			    MIN ( FactInstrumentSnapshot[SnapshotDate] )
+			VAR MaxDate =
+			    MAX ( FactInstrumentSnapshot[SnapshotDate] )
+			VAR NbRows =
+			    COUNTROWS ( FactInstrumentSnapshot )
+			RETURN
+			"Period: "
+			    & FORMAT ( MinDate, "yyyy-MM-dd" )
+			    & " → "
+			    & FORMAT ( MaxDate, "yyyy-MM-dd" )
+			    & " | "
+			    & FORMAT ( NbRows, "#,##0" )
+			    & " records"
+			
+			```
+		lineageTag: ed25afb0-3a4a-43cb-8134-198ab613b897
+
+	measure Instruments = ```
+			
+			DISTINCTCOUNT ( FactInstrumentSnapshot[InstrumentSK])
+			
+			```
+		lineageTag: 07f4bc26-8fcc-4f41-a80c-f02d384b76e6
+
+	measure Listings = ```
+			
+			 DISTINCTCOUNT ( FactInstrumentSnapshot[InstrumentListingSK] )
+			```
+		formatString: #,0
+		lineageTag: 03f40b9b-20ac-4c29-8ff0-fca4ea2d6807
+
+	measure Issuers = ```
+			
+			DISTINCTCOUNT(FactInstrumentSnapshot[IssuerSK])
+			
+			```
+		formatString: #,0
+		lineageTag: 26456835-da22-4842-8095-abd71c0c6496
+
+	measure 'Trading Venues' = ```
+			
+			DISTINCTCOUNT ( FactInstrumentSnapshot[TradingVenueSK] )
+			
+			```
+		formatString: #,0
+		lineageTag: f4c200f7-3062-4227-81e0-71c3cd108da7
+
+	measure 'Listings by Instrument' = ```
+			
+			VAR _listings = [Listings]
+			VAR _instruments = [Instruments]
+			RETURN
+			    DIVIDE(_listings, _instruments)
+			
+			
+			```
+		lineageTag: c9a4f215-81a5-43bb-893b-116ed4264baa
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Instruments by Issuer' = ```
+			
+			DIVIDE( [Instruments], [Issuers] )
+			
+			```
+		lineageTag: f3d7f61b-77e1-4d81-8085-6457ce1546ce
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Instruments by Venue' = ```
+			
+			DIVIDE( [Instruments], [Trading Venues] )
+			
+			```
+		lineageTag: eed4ed77-14c3-41ee-a13c-6290d63c1c37
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure '% Listings Top10 Venues' = ```
+			
+			VAR t =
+			    TOPN(
+			        10,
+			        SUMMARIZE(
+			            DimTradingVenue,
+			            DimTradingVenue[TradingVenueSK],
+			            "x", [Listings]
+			        ),
+			        [x], DESC
+			    )
+			VAR top10 = SUMX(t, [x])
+			RETURN DIVIDE( top10, [Listings] )
+			
+			```
+		lineageTag: f2a333bf-aed9-4697-9094-9ac886b48f38
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure '% Instruments Top10 Issuers' = ```
+			
+			VAR TotalInstr = sum(Agg_Issuer_Instruments[InstrumentsCnt])
+			VAR Top10Sum =
+			    SUMX(
+			        TOPN(
+			            10,
+			           Agg_Issuer_Instruments,
+			            'Agg_Issuer_Instruments'[InstrumentsCnt],
+			            DESC
+			        ),
+			        'Agg_Issuer_Instruments'[InstrumentsCnt]
+			    )
+			RETURN
+			    DIVIDE( Top10Sum, TotalInstr )
+			
+			```
+		lineageTag: d7289e54-29ac-4f0d-927c-5df5c5079267
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Total Nominal (Sum)' =
+			CALCULATE(
+			    SUM(DimInstrument[TotalIssuedNominalAmount]),
+			    RELATEDTABLE(DimInstrument)
+			)
+		lineageTag: cc9f37f0-c482-4e68-aae8-e8a6cc2fa3c8
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Nominal moyen par Listing' = ```
+			
+			DIVIDE( [Total Nominal (Sum)], [Listings] )
+			
+			```
+		lineageTag: e81eea22-78bc-4344-a4a4-962b043a45dd
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure '% Listings sans Issuer' = ```
+			
+			VAR bad =
+			    CALCULATE(
+			        DISTINCTCOUNT(FactInstrumentSnapshot[InstrumentListingSK]),
+			        ISBLANK(FactInstrumentSnapshot[IssuerSK])
+			    )
+			RETURN coalesce(DIVIDE(bad, [Listings]),0)
+			
+			```
+		lineageTag: 409d42da-7812-46b9-8a6d-1ce38aaeb800
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure '% Listings sans CFI' = ```
+			
+			VAR bad =
+			    CALCULATE(
+			        DISTINCTCOUNT(FactInstrumentSnapshot[InstrumentListingSK]),
+			        ISBLANK(FactInstrumentSnapshot[CfiSK])
+			    )
+			RETURN  COALESCE(DIVIDE(bad, [Listings]),0)
+			
+			```
+		lineageTag: f64b4de2-6a60-43c6-9890-355e8b71bfa4
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure '% Listings sans Currency' = ```
+			
+			VAR bad =
+			    CALCULATE(
+			        DISTINCTCOUNT(FactInstrumentSnapshot[InstrumentListingSK]),
+			        ISBLANK(FactInstrumentSnapshot[CurrencySK])
+			    )
+			RETURN COALESCE(DIVIDE(bad, [Listings]),0)
+			
+			```
+		lineageTag: 67f2a79d-09ed-4aa9-921e-7121040959e1
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure test = 2115451
+		formatString: 0
+		lineageTag: 822d538f-eb17-482a-961b-0c84fe666871
+
+	measure '% Listings sans Venue' = ```
+			
+			VAR bad =
+			    CALCULATE(
+			        DISTINCTCOUNT(FactInstrumentSnapshot[InstrumentListingSK]),
+			        ISBLANK(FactInstrumentSnapshot[TradingVenueSK])
+			    )
+			RETURN COALESCE(DIVIDE(bad, [Listings]),0)
+			
+			```
+		lineageTag: 005bbb83-d1ae-4e42-a4b0-aea14894f243
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Trading v analysis Subtitle' = ```
+			
+			VAR MinDate =
+			    MIN ( FactInstrumentSnapshot[SnapshotDate] )
+			VAR MaxDate =
+			    MAX ( FactInstrumentSnapshot[SnapshotDate] )
+			VAR NbRows =
+			    COUNTROWS ( FactInstrumentSnapshot )
+			RETURN
+			"Snapshot: "
+			 
+			    & FORMAT ( MaxDate, "yyyy-MM-dd" )
+			```
+		lineageTag: 3f18e181-ba88-418e-8658-bc68243a3d1e
+
+	measure '% Listings Top1 Venue' = ```
+			
+			VAR t =
+			    TOPN(
+			        1,
+			        ADDCOLUMNS(
+			            VALUES( DimTradingVenue[TradingVenueSK] ),
+			            "__x", CALCULATE( [Listings] )
+			        ),
+			        [__x], DESC
+			    )
+			VAR top1 = SUMX(t, [__x])
+			RETURN DIVIDE(top1, [Listings])
+			
+			```
+		lineageTag: 959cde26-f8df-4d3a-bab4-713df1c21a06
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Listings – Top1 CFI_Class' = ```
+			
+			VAR TopCFI =
+			    TOPN(
+			        1,
+			        ALL(DimCFI[Underlying_Class]),
+			        [Listings],
+			        DESC
+			    )
+			RETURN
+			IF(
+			    CONTAINS(TopCFI, DimCFI[Underlying_Class], SELECTEDVALUE(DimCFI[Underlying_Class])),
+			    [Listings]
+			)
+			
+			```
+		formatString: 0
+		lineageTag: 7502daa2-9d95-47e2-a51b-a844696b80a6
+
+	measure '% Listings Venue' = ```
+			
+			DIVIDE(
+			    [Listings],
+			    CALCULATE([Listings], ALL(DimTradingVenue))
+			)
+			
+			```
+		lineageTag: b7794cca-8cbb-468f-8513-86a1ab11bf55
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure SelectedFlagURL = ```
+			
+			COALESCE(
+			    SELECTEDVALUE ( DimCountry_MIC[FlagURL] ),
+			    "https://flagcdn.com/w80/eu.png"
+			)
+			
+			```
+		lineageTag: 1e17710f-b1f7-4f7b-ba52-eb947dfe7904
+
+	measure 'Total Listings by CFI' = ```
+			
+			CALCULATE(
+			    [Listings],
+			    ALL ( DimCFI[CFI] )
+			)
+			
+			```
+		formatString: 0
+		lineageTag: 26556382-4a83-4e86-842d-4d592cc35514
+
+	measure SelectedFlagURL_lei = ```
+			
+			COALESCE(
+			    SELECTEDVALUE ( DimCountry[FlagURL] ),
+			    "https://flagcdn.com/w80/un.png"
+			)
+			
+			```
+		lineageTag: 5fe08aba-7f22-414d-92bc-d04c103fb109
+
+	measure NB_LEI = ```
+			DISTINCTCOUNT(DimLeiGolderSrc[LEI]) 
+			```
+		formatString: 0
+		lineageTag: 4ff38301-3983-4665-973b-ef708254a729
+
+	measure 'LEI Created Count by Year' = ```
+			
+			CALCULATE(
+			    DISTINCTCOUNT(DimLeiGolderSrc[LEI]),
+			    NOT ISBLANK(DimLeiGolderSrc[InitialRegistrationDate])
+			)
+			
+			```
+		formatString: 0
+		lineageTag: 4c712708-85df-42e2-8f09-c6b1301f1c80
+
+	column Dummy
+		formatString: 0
+		lineageTag: be6aae75-0dc7-46e0-9420-ab1973c17b68
+		summarizeBy: sum
+		isNameInferred
+		sourceColumn: [Dummy]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Table_Mesures = calculated
+		mode: import
+		source = ```
+				
+				SELECTCOLUMNS (
+				    { 1 },
+				    "Dummy", BLANK()
+				)
+				
+				```
+
+	annotation PBI_Id = aeb83dcecdc3485c9296489b374ec01a
+

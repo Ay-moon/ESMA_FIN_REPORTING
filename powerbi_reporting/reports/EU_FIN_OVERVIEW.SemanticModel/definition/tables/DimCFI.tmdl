@@ -1,0 +1,216 @@
+table DimCFI
+	lineageTag: 58e68fb7-f54c-486f-814f-93db5853d415
+
+	column CFISK
+		dataType: int64
+		formatString: 0
+		lineageTag: e8219996-98f4-4136-a3ee-de7729fc7cfc
+		summarizeBy: none
+		sourceColumn: CFISK
+
+		annotation SummarizationSetBy = Automatic
+
+	column CFI
+		dataType: string
+		lineageTag: 2f397df7-a4fb-4311-bdd2-788cd06fc67b
+		summarizeBy: none
+		sourceColumn: CFI
+
+		annotation SummarizationSetBy = Automatic
+
+	column Category
+		dataType: string
+		lineageTag: c1d738e3-d4b8-4b9d-8e4b-937f53090dea
+		summarizeBy: none
+		sourceColumn: Category
+
+		annotation SummarizationSetBy = Automatic
+
+	column Group
+		dataType: string
+		lineageTag: 762e5048-e8b3-4207-8b53-d8ef110f8a58
+		summarizeBy: none
+		sourceColumn: Group
+
+		annotation SummarizationSetBy = Automatic
+
+	column Type
+		dataType: string
+		lineageTag: b6d20823-8ede-4620-a390-8ef3cecf59ac
+		summarizeBy: none
+		sourceColumn: Type
+
+		annotation SummarizationSetBy = Automatic
+
+	column Has_Strike
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: ad3bafa1-9615-4048-86a8-4fe286258283
+		summarizeBy: none
+		sourceColumn: Has_Strike
+
+		annotation SummarizationSetBy = Automatic
+
+	column Is_Derivative
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: cfb3749d-5bdc-44de-9fa9-e26a946eff44
+		summarizeBy: none
+		sourceColumn: Is_Derivative
+
+		annotation SummarizationSetBy = Automatic
+
+	column Exercise_Style
+		dataType: string
+		lineageTag: 916141dd-3e0c-42de-9d5d-472075870f1e
+		summarizeBy: none
+		sourceColumn: Exercise_Style
+
+		annotation SummarizationSetBy = Automatic
+
+	column Underlying_Class
+		dataType: string
+		lineageTag: 37191da5-74a9-4519-b991-83f76ee9a1ac
+		summarizeBy: none
+		sourceColumn: Underlying_Class
+
+		annotation SummarizationSetBy = Automatic
+
+	column ESMA_Reportable
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: a824ae5b-0089-45c6-825b-474fd9c0cdff
+		summarizeBy: none
+		sourceColumn: ESMA_Reportable
+
+		annotation SummarizationSetBy = Automatic
+
+	column CFI_1
+		dataType: string
+		isHidden
+		lineageTag: 25c95ac3-33b7-4223-8764-29db637a4a24
+		summarizeBy: none
+		sourceColumn: CFI_1
+
+		annotation SummarizationSetBy = Automatic
+
+	column CFI_2
+		dataType: string
+		isHidden
+		lineageTag: b347ff8d-f9c3-4fc1-bcc5-231516540568
+		summarizeBy: none
+		sourceColumn: CFI_2
+
+		annotation SummarizationSetBy = Automatic
+
+	column CFI_3
+		dataType: string
+		isHidden
+		lineageTag: 75ca2236-2eda-4c19-8d30-f2a15a459f00
+		summarizeBy: none
+		sourceColumn: CFI_3
+
+		annotation SummarizationSetBy = Automatic
+
+	column CFI_4
+		dataType: string
+		isHidden
+		lineageTag: 6da83221-475f-403d-8115-9d6c86347c6c
+		summarizeBy: none
+		sourceColumn: CFI_4
+
+		annotation SummarizationSetBy = Automatic
+
+	column CFI_5
+		dataType: string
+		isHidden
+		lineageTag: 56167378-26a1-4a76-978a-6ec5d51a8fed
+		summarizeBy: none
+		sourceColumn: CFI_5
+
+		annotation SummarizationSetBy = Automatic
+
+	column CFI_6
+		dataType: string
+		isHidden
+		lineageTag: 4b590896-99d5-40b6-938c-d8fe751c4f6d
+		summarizeBy: none
+		sourceColumn: CFI_6
+
+		annotation SummarizationSetBy = Automatic
+
+	column CFI_Level1_Code
+		dataType: string
+		lineageTag: c4824a40-b4c5-4d71-b8da-2a1da72c5a11
+		summarizeBy: none
+		sourceColumn: CFI_Level1_Code
+
+		annotation SummarizationSetBy = Automatic
+
+	column CFI_Level2_Code
+		dataType: string
+		lineageTag: e0c75d00-f980-4ffc-8d79-15e0d0532e82
+		summarizeBy: none
+		sourceColumn: CFI_Level2_Code
+
+		annotation SummarizationSetBy = Automatic
+
+	column CFI_Level3_Code
+		dataType: string
+		lineageTag: e9f036c8-2acb-43ca-8a8f-d6e9ec361ffb
+		summarizeBy: none
+		sourceColumn: CFI_Level3_Code
+
+		annotation SummarizationSetBy = Automatic
+
+	column CFI_Level1_Label_FR
+		dataType: string
+		lineageTag: 5bd4cb9d-bbec-4f21-81be-1e7e16209ecc
+		summarizeBy: none
+		sourceColumn: CFI_Level1_Label_FR
+
+		annotation SummarizationSetBy = Automatic
+
+	column CFI_Resume_FR
+		dataType: string
+		lineageTag: aa2ad916-5c97-4de8-aebf-5ea334268e5e
+		summarizeBy: none
+		sourceColumn: CFI_Resume_FR
+
+		annotation SummarizationSetBy = Automatic
+
+	column DataConfidence
+		dataType: string
+		isHidden
+		lineageTag: ce3d0c40-159d-49e5-8312-c13a6d18eb94
+		summarizeBy: none
+		sourceColumn: DataConfidence
+
+		annotation SummarizationSetBy = Automatic
+
+	column CFI_DESC
+		dataType: string
+		lineageTag: b5834a55-e253-4a90-a870-fdf3e2b01c6d
+		summarizeBy: none
+		sourceColumn: CFI_DESC
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimCFI = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database("PERSO-AJE-DELL\MSSQLSERVER01", "DWH_KHLWorldInvest"),
+				    mart_DimCFI = Source{[Schema="mart",Item="DimCFI"]}[Data],
+				    #"Removed Columns" = Table.RemoveColumns(mart_DimCFI,{"mart.FactInstrumentSnapshot", "LoadDtmUTC"}),
+				    #"Texte inséré entre les délimiteurs" = Table.AddColumn(#"Removed Columns", "Texte entre les délimiteurs", each Text.BetweenDelimiters([CFI_Resume_FR], "(", ")"), type text),
+				    #"Reordered Columns" = Table.ReorderColumns(#"Texte inséré entre les délimiteurs",{"CFISK", "CFI", "Category", "Group", "Type", "Has_Strike", "Is_Derivative", "Exercise_Style", "Underlying_Class", "ESMA_Reportable", "CFI_1", "CFI_2", "CFI_3", "CFI_4", "CFI_5", "CFI_6", "CFI_Level1_Code", "CFI_Level2_Code", "CFI_Level3_Code", "CFI_Level1_Label_FR", "CFI_Resume_FR", "Texte entre les délimiteurs", "DataConfidence"}),
+				    #"Replaced Value" = Table.ReplaceValue(#"Reordered Columns","souvent OTC","hybride/structuré",Replacer.ReplaceText,{"Texte entre les délimiteurs"}),
+				    #"Renamed Columns" = Table.RenameColumns(#"Replaced Value",{{"Texte entre les délimiteurs", "CFI_DESC"}})
+				in
+				    #"Renamed Columns"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,229 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.4.0/schema.json",
+  "name": "5d62d6cbb00de251fc02",
+  "position": {
+    "x": 10.105263157894736,
+    "y": 0,
+    "z": 0,
+    "height": 576,
+    "width": 397.4736842105263,
+    "tabOrder": 0
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DimCountry"
+                    }
+                  },
+                  "Property": "CountryName"
+                }
+              },
+              "queryRef": "DimCountry.CountryName",
+              "nativeQueryRef": "CountryName"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Table_Mesures"
+                    }
+                  },
+                  "Property": "LEI Created Count by Year"
+                }
+              },
+              "queryRef": "Table_Mesures.LEI Created Count by Year",
+              "nativeQueryRef": "LEI Created Count by Year"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DimLeiDate"
+                    }
+                  },
+                  "Property": "Year"
+                }
+              },
+              "queryRef": "DimLeiDate.Year",
+              "nativeQueryRef": "Year"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Table_Mesures"
+                  }
+                },
+                "Property": "LEI Created Count by Year"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "columnWidth": [
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "103D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "DimCountry.CountryName"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "66.49743589743588D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Table_Mesures.LEI Created Count by Year"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "73.62051282051283D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "DimLeiDate.Year"
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "c8f8616fc3b045ab1770",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "DimLeiDate"
+              }
+            },
+            "Property": "Year"
+          }
+        },
+        "type": "Advanced",
+        "filter": {
+          "Version": 2,
+          "From": [
+            {
+              "Name": "d1",
+              "Entity": "DimLeiDate",
+              "Type": 0
+            }
+          ],
+          "Where": [
+            {
+              "Condition": {
+                "Comparison": {
+                  "ComparisonKind": 1,
+                  "Left": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Source": "d1"
+                        }
+                      },
+                      "Property": "Year"
+                    }
+                  },
+                  "Right": {
+                    "Literal": {
+                      "Value": "2015L"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "bc33e283b344bbd9536c",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Table_Mesures"
+              }
+            },
+            "Property": "LEI Created Count by Year"
+          }
+        },
+        "type": "Advanced",
+        "filter": {
+          "Version": 2,
+          "From": [
+            {
+              "Name": "t",
+              "Entity": "Table_Mesures",
+              "Type": 0
+            }
+          ],
+          "Where": [
+            {
+              "Condition": {
+                "Comparison": {
+                  "ComparisonKind": 1,
+                  "Left": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Source": "t"
+                        }
+                      },
+                      "Property": "LEI Created Count by Year"
+                    }
+                  },
+                  "Right": {
+                    "Literal": {
+                      "Value": "600L"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

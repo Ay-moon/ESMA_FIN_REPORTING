@@ -1,0 +1,194 @@
+table DimLeiGolderSrc
+	lineageTag: 7a2c9279-980f-467e-98c4-38a2da6ff296
+
+	column LEI
+		dataType: string
+		isNullable: false
+		sourceProviderType: nvarchar(50)
+		lineageTag: c26dd4d9-580d-4d03-8406-85a968c564b9
+		summarizeBy: none
+		sourceColumn: LEI
+
+		annotation SummarizationSetBy = Automatic
+
+	column LegalAddress_City
+		dataType: string
+		sourceProviderType: nvarchar(200)
+		lineageTag: e8cacd72-522b-43c9-9269-c1619d614173
+		dataCategory: StateOrProvince
+		summarizeBy: none
+		sourceColumn: LegalAddress_City
+
+		annotation SummarizationSetBy = Automatic
+
+	column LegalAddress_Region
+		dataType: string
+		sourceProviderType: nvarchar(200)
+		lineageTag: 3e33b276-e047-4d36-ad6e-0f77ab78e04c
+		dataCategory: County
+		summarizeBy: none
+		sourceColumn: LegalAddress_Region
+
+		annotation SummarizationSetBy = Automatic
+
+	column LegalAddress_Country
+		dataType: string
+		sourceProviderType: nvarchar(50)
+		lineageTag: 5ccd57ce-8073-4c50-815f-d27ec89e0da0
+		dataCategory: Country
+		summarizeBy: none
+		sourceColumn: LegalAddress_Country
+
+		annotation SummarizationSetBy = Automatic
+
+	column LegalAddress_PostalCode
+		dataType: string
+		isHidden
+		sourceProviderType: nvarchar(50)
+		lineageTag: 9f5ecb34-33ac-4a8a-8f61-70f19c0d51d0
+		dataCategory: PostalCode
+		summarizeBy: none
+		sourceColumn: LegalAddress_PostalCode
+
+		annotation SummarizationSetBy = Automatic
+
+	column HeadquartersAddress_City
+		dataType: string
+		sourceProviderType: nvarchar(200)
+		lineageTag: 6974a2c3-634f-4ce8-ba95-1135c9ed6bc3
+		dataCategory: StateOrProvince
+		summarizeBy: none
+		sourceColumn: HeadquartersAddress_City
+
+		annotation SummarizationSetBy = Automatic
+
+	column HeadquartersAddress_Region
+		dataType: string
+		sourceProviderType: nvarchar(200)
+		lineageTag: 7a1aca5e-59c0-4f4d-8777-7de86ce3ec82
+		dataCategory: Country
+		summarizeBy: none
+		sourceColumn: HeadquartersAddress_Region
+
+		annotation SummarizationSetBy = Automatic
+
+	column HeadquartersAddress_Country
+		dataType: string
+		sourceProviderType: nvarchar(50)
+		lineageTag: 4d428e28-8b4c-4573-ac36-588c29f023b9
+		dataCategory: Country
+		summarizeBy: none
+		sourceColumn: HeadquartersAddress_Country
+
+		annotation SummarizationSetBy = Automatic
+
+	column HeadquartersAddress_PostalCode
+		dataType: string
+		sourceProviderType: nvarchar(50)
+		lineageTag: be8a8abe-c0e2-40e6-b2bf-5385f50c9d4d
+		dataCategory: PostalCode
+		summarizeBy: none
+		sourceColumn: HeadquartersAddress_PostalCode
+
+		annotation SummarizationSetBy = Automatic
+
+	column LegalJurisdiction
+		dataType: string
+		sourceProviderType: nvarchar(50)
+		lineageTag: 09d41258-a6e9-40fa-b7ee-e210b9fef740
+		summarizeBy: none
+		sourceColumn: LegalJurisdiction
+
+		annotation SummarizationSetBy = Automatic
+
+	column EntityCategory
+		dataType: string
+		sourceProviderType: nvarchar(50)
+		lineageTag: baddad5f-6de8-48c4-92e7-09432c1f9d2b
+		summarizeBy: none
+		sourceColumn: EntityCategory
+
+		annotation SummarizationSetBy = Automatic
+
+	column EntityStatus
+		dataType: string
+		sourceProviderType: nvarchar(50)
+		lineageTag: d20b93db-a6c2-4e95-aa1d-107259a45693
+		summarizeBy: none
+		sourceColumn: EntityStatus
+
+		annotation SummarizationSetBy = Automatic
+
+	column EntityCreationDate
+		dataType: dateTime
+		isHidden
+		formatString: General Date
+		sourceProviderType: datetime2
+		lineageTag: 29e0b6b0-0ac4-40d3-be00-e134340c6a8d
+		summarizeBy: none
+		sourceColumn: EntityCreationDate
+
+		annotation SummarizationSetBy = Automatic
+
+	column InitialRegistrationDate
+		dataType: dateTime
+		formatString: General Date
+		sourceProviderType: datetime2
+		lineageTag: c1e2f893-ea32-4b43-8f56-80918c5fbc5e
+		summarizeBy: none
+		sourceColumn: InitialRegistrationDate
+
+		annotation SummarizationSetBy = Automatic
+
+	column LastUpdateDate
+		dataType: dateTime
+		isHidden
+		formatString: General Date
+		sourceProviderType: datetime2
+		lineageTag: 2ee08798-88a9-41f4-a8eb-1510672fa3ab
+		summarizeBy: none
+		sourceColumn: LastUpdateDate
+
+		annotation SummarizationSetBy = Automatic
+
+	column RegistrationStatus
+		dataType: string
+		sourceProviderType: nvarchar(50)
+		lineageTag: 3f195d19-b858-41ab-adaa-b0815882d688
+		summarizeBy: none
+		sourceColumn: RegistrationStatus
+
+		annotation SummarizationSetBy = Automatic
+
+	column NextRenewalDate
+		dataType: dateTime
+		formatString: General Date
+		sourceProviderType: datetime2
+		lineageTag: ecc98d85-ee45-49db-a31d-b9b0b6027045
+		summarizeBy: none
+		sourceColumn: NextRenewalDate
+
+		annotation SummarizationSetBy = Automatic
+
+	column LegalForm_OtherLegalForm
+		dataType: string
+		isHidden
+		sourceProviderType: nvarchar(500)
+		lineageTag: 549366d4-1a68-4a70-8b43-a6cd254bb957
+		summarizeBy: none
+		sourceColumn: LegalForm_OtherLegalForm
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimLeiGolderSrc = m
+		mode: directQuery
+		source =
+				let
+				    Source = Sql.Database("PERSO-AJE-DELL\MSSQLSERVER01", "KHLWorldInvest", [Query="select #(lf)#(lf)LEI,LegalAddress_City,LegalAddress_Region,LegalAddress_Country,LegalAddress_PostalCode,HeadquartersAddress_City,HeadquartersAddress_Region,HeadquartersAddress_Country,HeadquartersAddress_PostalCode,LegalJurisdiction,EntityCategory,EntityStatus,EntityCreationDate,InitialRegistrationDate,LastUpdateDate,RegistrationStatus,NextRenewalDate,LegalForm_OtherLegalForm#(lf)from [stg].[STG_LEI_CDF_GOLDEN] ", CreateNavigationProperties=false])
+				in
+				    Source
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+
