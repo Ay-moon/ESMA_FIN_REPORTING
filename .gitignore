@@ -1,109 +1,29 @@
-# ============================================
-# LOGS (now stored in AUDIT_BI database)
-# ============================================
-src/logs/
-logs/
-*.log
-audit.txt
-
-
-# ============================================
-# SQL Server Build Outputs (DACPAC projects)
-# ============================================
-bin/
-obj/
-*.dacpac
-*.refactorlog
-.sqlcodegen.json
-deployment_reports/
-backups/
-
-
-# ============================================
-# Python
-# ============================================
-__pycache__/
-*.py[cod]
-*$py.class
-.Python
-.venv/
-venv/
-env/
-*.egg-info/
-dist/
-build/
-pip-log.txt
-*.pyc
-.coverage
-.pytest_cache/
-
-
-# ============================================
-# Configuration (Secrets)
-# ============================================
+# --- Secrets / local runtime config ---
 config/config.ini
-!config/config.template.ini
-config/local.ini
+config/*.local.ini
 config/*.secret.ini
-*.secrets
-.env
+
+# --- Committed template(s) ---
+!config/config.template.ini
 
 
-# ============================================
-# Data Files (Large CSV and all content)
-# ============================================
+
+# --- data & downloads (jamais sur github) ---
 data/
-!data/.gitkeep
+**/data/
+**/*.csv
+**/*.zip
+**/*.gz
+**/*.xlsx
+**/*.xls
 
+# --- logs ---
+logs/
+**/logs/
+*.log
 
-
-
-# ============================================
-# IDE & Editor
-# ============================================
-.vscode/
-.vs/
-.idea/
-*.swp
-*.swo
-*~
-.DS_Store
-Thumbs.db
-.sublime-project
-.sublime-workspace
-
-
-# ============================================
-# PowerBI
-# ============================================
-*.pbitd
-.Analysis/
-.platform
-
-
-# ============================================
-# Database Backups
-# ============================================
-*.bak
-*.bak.zip
-backups/
-*.dacpac.backup
-
-
-# ============================================
-# OS Files
-# ============================================
-.DS_Store
-Thumbs.db
-.AppleDouble
-.LSOverride
-
-
-# ============================================
-# Temp Files
-# ============================================
-*.tmp
-*.temp
-temp/
-*.cache
-*.pdb
+# --- python ---
+__pycache__/
+*.pyc
+.venv/
+.env
