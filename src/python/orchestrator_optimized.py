@@ -269,19 +269,23 @@ class ETLOrchestrator:
                     start_time=start_time,
                     end_time=end_time,
                     duration_seconds=duration,
-                    stdout=result.stdout[-500:] if result.stdout else None
+                    stdout=result.stdout if result.stdout else None
                 )
             else:
-                error = result.stderr[-500:] if result.stderr else result.stdout[-500:]
-                self.logger.error(f"❌ {pipeline.name} failed: {error}")
+                # Log full error output for debugging
+                error_output = result.stderr if result.stderr else result.stdout
+                if error_output:
+                    self.logger.error(f"❌ {pipeline.name} failed with full output:\n{error_output}")
+                # Keep truncated version for the result object
+                error_truncated = error_output[-1000:] if error_output else "Unknown error"
                 return ExecutionResult(
                     pipeline_name=pipeline.name,
                     status=ETLStatus.FAILED.value,
                     start_time=start_time,
                     end_time=end_time,
                     duration_seconds=duration,
-                    error_message=error,
-                    stderr=result.stderr
+                    error_message=error_truncated,
+                    stderr=error_output
                 )
         
         except subprocess.TimeoutExpired:

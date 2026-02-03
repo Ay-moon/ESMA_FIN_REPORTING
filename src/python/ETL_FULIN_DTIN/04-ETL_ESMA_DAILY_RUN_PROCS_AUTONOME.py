@@ -20,19 +20,40 @@ import sys
 from pathlib import Path
 
 def _bootstrap_sys_path() -> None:
+    """Bootstrap sys.path to include src/python directory"""
     here = Path(__file__).resolve()
+    print(f"[BOOTSTRAP] Script path: {here}", file=sys.stderr)
+    
     for parent in here.parents:
-        if (parent / "config").exists() and (parent / "src" / "python").exists():
-            sys.path.insert(0, str(parent / "src" / "python"))
+        config_dir = parent / "config"
+        src_python_dir = parent / "src" / "python"
+        print(f"[BOOTSTRAP] Checking {parent}: config={config_dir.exists()}, src/python={src_python_dir.exists()}", file=sys.stderr)
+        
+        if config_dir.exists() and src_python_dir.exists():
+            sys.path.insert(0, str(src_python_dir))
+            print(f"[BOOTSTRAP] SUCCESS: Added {src_python_dir} to sys.path", file=sys.stderr)
             return
+    
+    print(f"[BOOTSTRAP] ERROR: Repo root not found (expected 'config' and 'src/python' in parents of {here})", file=sys.stderr)
     raise RuntimeError("Repo root not found (expected 'config' and 'src/python').")
 
-_bootstrap_sys_path()
-from common.config_loader import load_config
+try:
+    _bootstrap_sys_path()
+    print("[BOOTSTRAP] sys.path bootstrap completed", file=sys.stderr)
+except Exception as e:
+    print(f"[BOOTSTRAP] FAILED: {e}", file=sys.stderr)
+    raise
+
+try:
+    from common.config_loader import load_config
+    print("[IMPORT] Successfully imported load_config", file=sys.stderr)
+except ImportError as e:
+    print(f"[IMPORT] FAILED to import load_config: {e}", file=sys.stderr)
+    raise
+
 
 import configparser
 from datetime import datetime
-from pathlib import Path
 import traceback
 from typing import List, Optional, Tuple
 
@@ -223,28 +244,86 @@ def log_counts(conn_log: pyodbc.Connection,
             )
 
 
-def exec_proc(conn: pyodbc.Connection, proc_fullname: str) -> None:
+def exec_proc(conn: pyodbc.Connection, conn_log: pyodbc.Connection, proc_fullname: str, schema_log: str = "log", run_ts: str = "") -> bool:
+    """
+    Execute a stored procedure with comprehensive error handling.
+    
+    Returns:
+        True if successful, False if permission denied or procedure not found
+    
+    Raises:
+        Exception for other SQL errors
+    """
     cur = conn.cursor()
     try:
+        print(f"[EXEC_PROC] Executing: {proc_fullname}", file=sys.stderr)
         cur.execute(f"EXEC {proc_fullname};")
+        print(f"[EXEC_PROC] SUCCESS: {proc_fullname}", file=sys.stderr)
+        return True
+    except pyodbc.ProgrammingError as e:
+        error_str = str(e)
+        # Check for permission denied (error 229) or object not found (error 2812)
+        if "[42000]" in error_str or "229" in error_str:
+            # Permission denied
+            msg = f"PERMISSION DENIED: {proc_fullname} - Check EXECUTE permissions"
+            print(f"[EXEC_PROC] {msg}: {e}", file=sys.stderr)
+            sql_log_line(conn_log, msg, element=proc_fullname, complement=f"Error: {str(e)[:500]}", schema_log=schema_log)
+            return False
+        elif "[2812]" in error_str or "2812" in error_str:
+            # Procedure not found
+            msg = f"PROCEDURE NOT FOUND: {proc_fullname}"
+            print(f"[EXEC_PROC] {msg}: {e}", file=sys.stderr)
+            sql_log_line(conn_log, msg, element=proc_fullname, complement=f"Error: {str(e)[:500]}", schema_log=schema_log)
+            return False
+        else:
+            # Other SQL errors - re-raise
+            print(f"[EXEC_PROC] SQL ERROR executing {proc_fullname}: {e}", file=sys.stderr)
+            raise
     finally:
         cur.close()
 
 
 def main() -> int:
     run_ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    # Load config with better error reporting
+    try:
+        print(f"[CONFIG] Loading configuration...", file=sys.stderr)
+        cfg = load_config()
+        print(f"[CONFIG] Configuration loaded successfully", file=sys.stderr)
+    except Exception as e:
+        print(f"[CONFIG] ERROR: Failed to load configuration: {e}", file=sys.stderr)
+        raise
 
-    cfg = load_config()
+    # Load database parameters with error reporting
+    try:
+        print(f"[CONFIG] Loading database parameters...", file=sys.stderr)
+        db_stg = _get_sqlserver_param(cfg, "database_stg")
+        db_dwh = _get_sqlserver_param(cfg, "database_dwh")
+        schema_stg = _get_sqlserver_param(cfg, "schema_stg", required=False, default="stg")
+        schema_log = _get_sqlserver_param(cfg, "schema_log", required=False, default="log")
+        print(f"[CONFIG] Database parameters loaded: db_stg={db_stg}, db_dwh={db_dwh}, schema_stg={schema_stg}, schema_log={schema_log}", file=sys.stderr)
+    except Exception as e:
+        print(f"[CONFIG] ERROR: Failed to load database parameters: {e}", file=sys.stderr)
+        raise
 
-    db_stg = _get_sqlserver_param(cfg, "database_stg")
-    db_dwh = _get_sqlserver_param(cfg, "database_dwh")
-    schema_stg = _get_sqlserver_param(cfg, "schema_stg", required=False, default="stg")
-    schema_log = _get_sqlserver_param(cfg, "schema_log", required=False, default="log")
+    # Load table names
+    try:
+        fulins_table = cfg.get("ESMA", "fulins_table", fallback=DEFAULT_FULINS_TABLE)
+        dltins_table = cfg.get("ESMA", "dltins_table", fallback=DEFAULT_DLTINS_TABLE)
+        print(f"[CONFIG] Table names loaded: fulins={fulins_table}, dltins={dltins_table}", file=sys.stderr)
+    except Exception as e:
+        print(f"[CONFIG] ERROR: Failed to load table names: {e}", file=sys.stderr)
+        raise
 
-    fulins_table = cfg.get("ESMA", "fulins_table", fallback=DEFAULT_FULINS_TABLE)
-    dltins_table = cfg.get("ESMA", "dltins_table", fallback=DEFAULT_DLTINS_TABLE)
-
-    conn_stg = sql_conn(cfg, db_stg)
+    # Connect to STG database
+    try:
+        print(f"[DB] Connecting to STG database: {db_stg}...", file=sys.stderr)
+        conn_stg = sql_conn(cfg, db_stg)
+        print(f"[DB] Connected to STG database successfully", file=sys.stderr)
+    except Exception as e:
+        print(f"[DB] ERROR: Failed to connect to STG database {db_stg}: {e}", file=sys.stderr)
+        raise
 
     try:
         sql_log_line(conn_stg, "BEGIN", element="RUN", complement=f"run_ts={run_ts} db_stg={db_stg} db_dwh={db_dwh} FORCE={FORCE}", schema_log=schema_log)
@@ -260,8 +339,11 @@ def main() -> int:
 
         # Proc STG
         sql_log_line(conn_stg, "CALL_PROC", element="CALL_PROC", complement=f"{PROC_STG} @ {db_stg}", schema_log=schema_log)
-        exec_proc(conn_stg, PROC_STG)
-        sql_log_line(conn_stg, "PROC_OK", element="PROC_OK", complement=f"{PROC_STG} @ {db_stg}", schema_log=schema_log)
+        proc_stg_success = exec_proc(conn_stg, conn_stg, PROC_STG, schema_log, run_ts)
+        if proc_stg_success:
+            sql_log_line(conn_stg, "PROC_OK", element="PROC_OK", complement=f"{PROC_STG} @ {db_stg}", schema_log=schema_log)
+        else:
+            sql_log_line(conn_stg, "PROC_SKIPPED", element="PROC_SKIPPED", complement=f"{PROC_STG} @ {db_stg} (no permissions)", schema_log=schema_log)
 
         # Proc MART
         conn_dwh = None
@@ -273,8 +355,11 @@ def main() -> int:
             log_counts(conn_stg, conn_dwh, MART_TABLES_TO_COUNT, "BEFORE", run_ts, schema_log)
 
             sql_log_line(conn_stg, "CALL_PROC", element="CALL_PROC", complement=f"{PROC_MART} @ {db_dwh}", schema_log=schema_log)
-            exec_proc(conn_dwh, PROC_MART)
-            sql_log_line(conn_stg, "PROC_OK", element="PROC_OK", complement=f"{PROC_MART} @ {db_dwh}", schema_log=schema_log)
+            proc_mart_success = exec_proc(conn_dwh, conn_stg, PROC_MART, schema_log, run_ts)
+            if proc_mart_success:
+                sql_log_line(conn_stg, "PROC_OK", element="PROC_OK", complement=f"{PROC_MART} @ {db_dwh}", schema_log=schema_log)
+            else:
+                sql_log_line(conn_stg, "PROC_SKIPPED", element="PROC_SKIPPED", complement=f"{PROC_MART} @ {db_dwh} (no permissions)", schema_log=schema_log)
 
             sql_log_line(conn_stg, "ROWCOUNT_AFTER_MART", element="ROWCOUNT_AFTER_MART", complement=f"tables={len(MART_TABLES_TO_COUNT)} run_ts={run_ts}", schema_log=schema_log)
             log_counts(conn_stg, conn_dwh, MART_TABLES_TO_COUNT, "AFTER", run_ts, schema_log)

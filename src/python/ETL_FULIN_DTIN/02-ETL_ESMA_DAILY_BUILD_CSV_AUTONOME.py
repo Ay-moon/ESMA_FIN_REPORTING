@@ -27,15 +27,36 @@ import sys
 from pathlib import Path
 
 def _bootstrap_sys_path() -> None:
+    """Bootstrap sys.path to include src/python directory"""
     here = Path(__file__).resolve()
+    print(f"[BOOTSTRAP] Script path: {here}", file=sys.stderr)
+    
     for parent in here.parents:
-        if (parent / "config").exists() and (parent / "src" / "python").exists():
-            sys.path.insert(0, str(parent / "src" / "python"))
+        config_dir = parent / "config"
+        src_python_dir = parent / "src" / "python"
+        print(f"[BOOTSTRAP] Checking {parent}: config={config_dir.exists()}, src/python={src_python_dir.exists()}", file=sys.stderr)
+        
+        if config_dir.exists() and src_python_dir.exists():
+            sys.path.insert(0, str(src_python_dir))
+            print(f"[BOOTSTRAP] SUCCESS: Added {src_python_dir} to sys.path", file=sys.stderr)
             return
+    
+    print(f"[BOOTSTRAP] ERROR: Repo root not found (expected 'config' and 'src/python' in parents of {here})", file=sys.stderr)
     raise RuntimeError("Repo root not found (expected 'config' and 'src/python').")
 
-_bootstrap_sys_path()
-from common.config_loader import load_config, resolve_project_root
+try:
+    _bootstrap_sys_path()
+    print("[BOOTSTRAP] sys.path bootstrap completed", file=sys.stderr)
+except Exception as e:
+    print(f"[BOOTSTRAP] FAILED: {e}", file=sys.stderr)
+    raise
+
+try:
+    from common.config_loader import load_config, resolve_project_root
+    print("[IMPORT] Successfully imported load_config and resolve_project_root", file=sys.stderr)
+except ImportError as e:
+    print(f"[IMPORT] FAILED to import from common.config_loader: {e}", file=sys.stderr)
+    raise
 
 import configparser
 import csv

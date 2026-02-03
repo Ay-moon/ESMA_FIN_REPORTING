@@ -36,13 +36,27 @@ def _bootstrap_sys_path() -> Path:
     and "src/python" directory.
     """
     here = Path(__file__).resolve()
+    print(f"[BOOTSTRAP] Script path: {here}", file=sys.stderr)
+    
     for parent in here.parents:
-        if (parent / "config").exists() and (parent / "src" / "python").exists():
-            sys.path.insert(0, str(parent / "src" / "python"))
+        config_dir = parent / "config"
+        src_python_dir = parent / "src" / "python"
+        print(f"[BOOTSTRAP] Checking {parent}: config={config_dir.exists()}, src/python={src_python_dir.exists()}", file=sys.stderr)
+        
+        if config_dir.exists() and src_python_dir.exists():
+            sys.path.insert(0, str(src_python_dir))
+            print(f"[BOOTSTRAP] SUCCESS: Added {src_python_dir} to sys.path", file=sys.stderr)
             return parent
+    
+    print(f"[BOOTSTRAP] ERROR: Repo root not found (expected 'config' and 'src/python' in parents of {here})", file=sys.stderr)
     raise RuntimeError("Cannot bootstrap sys.path: repo root not found (missing 'config' or 'src/python').")
 
-REPO_ROOT = _bootstrap_sys_path()
+try:
+    REPO_ROOT = _bootstrap_sys_path()
+    print("[BOOTSTRAP] sys.path bootstrap completed", file=sys.stderr)
+except Exception as e:
+    print(f"[BOOTSTRAP] FAILED: {e}", file=sys.stderr)
+    raise
 
 # ----------------------------
 # Standard libs

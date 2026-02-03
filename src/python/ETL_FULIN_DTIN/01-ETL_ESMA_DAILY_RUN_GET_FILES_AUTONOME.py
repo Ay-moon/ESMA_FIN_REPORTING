@@ -17,10 +17,44 @@ Ce script remplace la logique "pilotée par paramètres" par une logique simple 
 Aucune création BSV/CSV, aucun chargement SQL des XML : ce script s'arrête après extraction.
 """
 
+import sys
+from pathlib import Path
+
+def _bootstrap_sys_path() -> None:
+    """Bootstrap sys.path to include src/python directory"""
+    here = Path(__file__).resolve()
+    print(f"[BOOTSTRAP] Script path: {here}", file=sys.stderr)
+    
+    for parent in here.parents:
+        config_dir = parent / "config"
+        src_python_dir = parent / "src" / "python"
+        print(f"[BOOTSTRAP] Checking {parent}: config={config_dir.exists()}, src/python={src_python_dir.exists()}", file=sys.stderr)
+        
+        if config_dir.exists() and src_python_dir.exists():
+            sys.path.insert(0, str(src_python_dir))
+            print(f"[BOOTSTRAP] SUCCESS: Added {src_python_dir} to sys.path", file=sys.stderr)
+            return
+    
+    print(f"[BOOTSTRAP] ERROR: Repo root not found (expected 'config' and 'src/python' in parents of {here})", file=sys.stderr)
+    raise RuntimeError("Repo root not found (expected 'config' and 'src/python').")
+
+try:
+    _bootstrap_sys_path()
+    print("[BOOTSTRAP] sys.path bootstrap completed", file=sys.stderr)
+except Exception as e:
+    print(f"[BOOTSTRAP] FAILED: {e}", file=sys.stderr)
+    raise
+
+try:
+    from common.config_loader import load_config, resolve_project_root
+    print("[IMPORT] Successfully imported load_config and resolve_project_root", file=sys.stderr)
+except ImportError as e:
+    print(f"[IMPORT] FAILED to import from common.config_loader: {e}", file=sys.stderr)
+    raise
+
 import argparse
 import configparser
 from datetime import date, datetime, timedelta
-from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 import re
 import shutil
@@ -28,7 +62,6 @@ import zipfile
 
 import pyodbc
 import requests
-from common.config_loader import load_config, resolve_project_root
 SCRIPT_NAME = "01-ETL_ESMA_DAILY_RUN_GET_FILES_AUTONOME.py"
 CONFIG_DIR_DEFAULT = None
 ESMA_SOLR = "https://registers.esma.europa.eu/solr/esma_registers_firds_files/select"
