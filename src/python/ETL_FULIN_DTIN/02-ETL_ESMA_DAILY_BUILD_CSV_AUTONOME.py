@@ -69,6 +69,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import pyodbc
+from common.sqlserver import connect as connect_sqlserver
 
 SCRIPT_NAME = "02-ETL_ESMA_DAILY_BUILD_CSV_AUTONOME.py"
 DELIMITER = "|"
@@ -107,18 +108,7 @@ COLUMNS_DLT_STG = COLUMNS_FULINS_WIDE + ["ActionType"]
 
 
 def sql_conn(cfg: configparser.ConfigParser) -> pyodbc.Connection:
-    driver = cfg["SQLSERVER"].get("driver", "ODBC Driver 17 for SQL Server")
-    server = cfg["SQLSERVER"]["server"]
-    database = cfg["SQLSERVER"]["database_stg"]
-    user = cfg["SQLSERVER"]["user"]
-    password = cfg["SQLSERVER"]["password"]
-    conn_str = (
-        f"DRIVER={{{driver}}};"
-        f"SERVER={server};DATABASE={database};"
-        f"UID={user};PWD={password};"
-        "TrustServerCertificate=yes;"
-    )
-    return pyodbc.connect(conn_str, autocommit=True)
+    return connect_sqlserver(cfg)
 
 
 def sql_log_line(conn: pyodbc.Connection, message: str, element: str = "", complement: str = "", file_name: str = "") -> None:

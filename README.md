@@ -39,6 +39,7 @@ python src/python/ETL_FULIN_DTIN/ETL_ESMA_DAILY_RUN_AUTONOME.py
 - **Versioning:** DACPAC projects (no raw SQL scripts)
 - **Logging:** AUDIT_BI.[log].[ETL_Execution_Log] (all executions)
 - **Deployment:** Automated with PowerShell scripts
+- **Recovery (new SQL instance):** `src/sql/00_REBUILD_SQLSERVER_INSTANCE.sql` (sqlcmd bootstrap)
 
 ## 📖 Documentation
 

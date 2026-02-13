@@ -58,6 +58,7 @@ import traceback
 from typing import List, Optional, Tuple
 
 import pyodbc
+from common.sqlserver import connect as connect_sqlserver
 
 SCRIPT_NAME = Path(__file__).name
 
@@ -89,17 +90,7 @@ def _get_sqlserver_param(cfg: configparser.ConfigParser, key: str, *, required: 
 
 
 def sql_conn(cfg: configparser.ConfigParser, database: str) -> pyodbc.Connection:
-    driver = _get_sqlserver_param(cfg, "driver", required=False, default="ODBC Driver 17 for SQL Server")
-    server = _get_sqlserver_param(cfg, "server")
-    user = _get_sqlserver_param(cfg, "user")
-    password = _get_sqlserver_param(cfg, "password")
-    conn_str = (
-        f"DRIVER={{{driver}}};"
-        f"SERVER={server};DATABASE={database};"
-        f"UID={user};PWD={password};"
-        "TrustServerCertificate=yes;"
-    )
-    return pyodbc.connect(conn_str, autocommit=True)
+    return connect_sqlserver(cfg, database=database)
 
 
 def sql_log_line(conn, message, element: str = "", complement: str = "", file_name: str = "", schema_log: str = "log") -> None:
@@ -203,19 +194,17 @@ def count_table_rows_robust(conn: pyodbc.Connection, full_table_name: str) -> Tu
 
 
 def count_stg_total(conn: pyodbc.Connection, schema_stg: str, fulins_table: str, dltins_table: str) -> int:
-    cur = conn.cursor()
-    try:
-        cur.execute(
-            f"""
-            SELECT
-                (SELECT COUNT_BIG(1) FROM {schema_stg}.{fulins_table}) +
-                (SELECT COUNT_BIG(1) FROM {schema_stg}.{dltins_table}) AS total_rows
-            """
+    full_name_ful = f"{schema_stg}.{fulins_table}"
+    full_name_dlt = f"{schema_stg}.{dltins_table}"
+
+    ful_rows, _ = count_table_rows_robust(conn, full_name_ful)
+    dlt_rows, _ = count_table_rows_robust(conn, full_name_dlt)
+
+    if ful_rows < 0 or dlt_rows < 0:
+        raise RuntimeError(
+            f"Unable to count STG rows for {full_name_ful} or {full_name_dlt}"
         )
-        val = cur.fetchone()[0]
-        return int(val or 0)
-    finally:
-        cur.close()
+    return ful_rows + dlt_rows
 
 
 def log_counts(conn_log: pyodbc.Connection,
@@ -260,7 +249,7 @@ def exec_proc(conn: pyodbc.Connection, conn_log: pyodbc.Connection, proc_fullnam
         cur.execute(f"EXEC {proc_fullname};")
         print(f"[EXEC_PROC] SUCCESS: {proc_fullname}", file=sys.stderr)
         return True
-    except pyodbc.ProgrammingError as e:
+    except Exception as e:
         error_str = str(e)
         # Check for permission denied (error 229) or object not found (error 2812)
         if "[42000]" in error_str or "229" in error_str:

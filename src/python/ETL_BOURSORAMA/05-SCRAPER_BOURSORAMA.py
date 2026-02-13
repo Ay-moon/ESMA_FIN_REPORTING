@@ -7,7 +7,7 @@
 
 Same business logic as original script.
 Only refactor: configuration loading via common.config_loader.load_config()
-(no hardcoded D:\ paths, no scraper.local.ini fixed path).
+(no hardcoded D:\\ paths, no scraper.local.ini fixed path).
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ import time
 import unicodedata
 import traceback
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -565,74 +565,50 @@ def main() -> int:
 
     conn = sql_conn(cfg)
 
-    latence_min = get_int(cfg, "SCRAPER_PARAM", "Latence", 5)
-    try:
-        duree_val = float(get_str(cfg, "SCRAPER_PARAM", "Duree", "0").strip())
-    except Exception:
-        duree_val = 0.0
-
-    window_start_ts = datetime.now()
-    window_end_ts = window_start_ts + timedelta(hours=duree_val) if duree_val > 0 else window_start_ts
-
     try:
         sql_log_line(
             conn,
-            "START Boursorama parallel scraper (strict text) - WINDOW MODE",
+            "START Boursorama parallel scraper (strict text) - SINGLE RUN MODE",
             element="RUN_START",
-            complement=f"latence_min={latence_min} | duree_h={duree_val} | window_start={window_start_ts.strftime('%Y-%m-%d %H:%M:%S')} | window_end={window_end_ts.strftime('%Y-%m-%d %H:%M:%S')}",
+            complement=f"run_start={datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
         )
 
-        run_index = 0
+        run_index = 1
         all_results: List[Path] = []
 
-        while True:
-            now = datetime.now()
-            if duree_val > 0 and now > window_end_ts:
-                break
+        run_start_ts = datetime.now()
+        file_ts = run_start_ts
 
-            run_index += 1
-            run_start_ts = datetime.now()
-            file_ts = run_start_ts
+        sql_log_line(
+            conn,
+            f"ITERATION {run_index} START",
+            element="RUN_ITER_START",
+            complement=f"run_start={run_start_ts.strftime('%Y-%m-%d %H:%M:%S')}",
+        )
 
-            sql_log_line(
-                conn,
-                f"ITERATION {run_index} START",
-                element="RUN_ITER_START",
-                complement=f"run_start={run_start_ts.strftime('%Y-%m-%d %H:%M:%S')}",
-            )
+        specs = build_specs(cfg)
 
-            specs = build_specs(cfg)
+        results: List[Path] = []
+        for spec in specs:
+            if not spec.root_url:
+                sql_log_line(conn, f"SKIP group {spec.name}", element="GROUP_SKIP", complement="root_url empty")
+                continue
+            if spec.limit_pages <= 0:
+                sql_log_line(conn, f"SKIP group {spec.name}", element="GROUP_SKIP", complement="limit_pages<=0")
+                continue
 
-            results: List[Path] = []
-            for spec in specs:
-                if not spec.root_url:
-                    sql_log_line(conn, f"SKIP group {spec.name}", element="GROUP_SKIP", complement="root_url empty")
-                    continue
-                if spec.limit_pages <= 0:
-                    sql_log_line(conn, f"SKIP group {spec.name}", element="GROUP_SKIP", complement="limit_pages<=0")
-                    continue
+            p = scrape_group(conn, spec, cfg, run_start_ts, file_ts, output_dir, tmp_html_dir)
+            if p:
+                results.append(p)
 
-                p = scrape_group(conn, spec, cfg, run_start_ts, file_ts, output_dir, tmp_html_dir)
-                if p:
-                    results.append(p)
+        all_results.extend(results)
 
-            all_results.extend(results)
-
-            sql_log_line(
-                conn,
-                f"ITERATION {run_index} END",
-                element="RUN_ITER_END",
-                complement=f"csv_files={len(results)}",
-            )
-
-            if duree_val <= 0:
-                break
-
-            next_start = datetime.now() + timedelta(minutes=latence_min)
-            if next_start > window_end_ts:
-                break
-
-            time.sleep(max(0, (next_start - datetime.now()).total_seconds()))
+        sql_log_line(
+            conn,
+            f"ITERATION {run_index} END",
+            element="RUN_ITER_END",
+            complement=f"csv_files={len(results)}",
+        )
 
         sql_log_line(
             conn,
@@ -641,8 +617,8 @@ def main() -> int:
         )
 
         print("=" * 70)
-        print("BOURSORAMA SCRAPER - DONE (window mode)")
-        print(f"  runs exécutés = {run_index}")
+        print("BOURSORAMA SCRAPER - DONE (single run mode)")
+        print(f"  runs executes = {run_index}")
         if all_results:
             tail = all_results[-10:]
             print("  derniers CSV produits :")
@@ -674,3 +650,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

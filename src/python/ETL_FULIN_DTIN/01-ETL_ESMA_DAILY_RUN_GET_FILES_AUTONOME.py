@@ -53,7 +53,6 @@ except ImportError as e:
     raise
 
 import argparse
-import configparser
 from datetime import date, datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 import re
@@ -62,10 +61,14 @@ import zipfile
 
 import pyodbc
 import requests
+from requests.exceptions import ProxyError
+from common.sqlserver import connect as connect_sqlserver
 SCRIPT_NAME = "01-ETL_ESMA_DAILY_RUN_GET_FILES_AUTONOME.py"
 CONFIG_DIR_DEFAULT = None
 ESMA_SOLR = "https://registers.esma.europa.eu/solr/esma_registers_firds_files/select"
 HTTP_TIMEOUT = 120
+NO_PROXY_SESSION = requests.Session()
+NO_PROXY_SESSION.trust_env = False
 
 # --- SQL last loaded (fourni par le user) ---
 SQL_LAST_LOADED_FULL = """
@@ -76,7 +79,7 @@ WHERE SourceFileName LIKE 'FULINS_%'
 
 SQL_LAST_LOADED_DELTA = """
 select MAX(TRY_CONVERT(date, substring(SourceFileName,8,8)))
-FROM stg.ESMA_FULINS_WIDE
+FROM stg.ESMA_DLTINS_WIDE
 WHERE SourceFileName LIKE 'DLTINS_%'
 """
 
@@ -87,21 +90,8 @@ WHERE SourceFileName LIKE 'DLTINS_%'
 
 
 
-def sql_conn(cfg: configparser.ConfigParser) -> pyodbc.Connection:
-    driver = cfg["SQLSERVER"].get("driver", "ODBC Driver 17 for SQL Server")
-    server = cfg["SQLSERVER"]["server"]
-    database = cfg["SQLSERVER"].get("database_stg") or cfg["SQLSERVER"].get("database")
-    if not database:
-        raise KeyError("Il manque SQLSERVER.database_stg (ou database) dans bbs_server.local.ini")
-    user = cfg["SQLSERVER"]["user"]
-    password = cfg["SQLSERVER"]["password"]
-    conn_str = (
-        f"DRIVER={{{driver}}};"
-        f"SERVER={server};DATABASE={database};"
-        f"UID={user};PWD={password};"
-        "TrustServerCertificate=yes;"
-    )
-    return pyodbc.connect(conn_str, autocommit=True)
+def sql_conn(cfg) -> pyodbc.Connection:
+    return connect_sqlserver(cfg)
 
 
 def sql_log_line(conn: pyodbc.Connection, message: str, element: str = "", complement: str = "", file_name: str = "") -> None:
@@ -188,7 +178,7 @@ def solr_search_by_date_range(start_ymd: str, end_ymd: str, rows: int = 500, max
     fq = f"publication_date:[{start_ymd}T00:00:00Z TO {end_ymd}T23:59:59Z]"
     while True:
         params = {"q": "*", "fq": fq, "wt": "json", "rows": rows, "start": start, "sort": "publication_date desc"}
-        r = requests.get(ESMA_SOLR, params=params, timeout=HTTP_TIMEOUT)
+        r = _http_get(ESMA_SOLR, params=params, timeout=HTTP_TIMEOUT)
         r.raise_for_status()
         data = r.json()
         resp = data.get("response", {})
@@ -221,12 +211,20 @@ def download_file(url: str, out_path: Path) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     if out_path.exists() and out_path.stat().st_size > 0:
         return
-    with requests.get(url, stream=True, timeout=HTTP_TIMEOUT) as r:
+    with _http_get(url, stream=True, timeout=HTTP_TIMEOUT) as r:
         r.raise_for_status()
         with open(out_path, "wb") as f:
             for chunk in r.iter_content(chunk_size=1024 * 1024):
                 if chunk:
                     f.write(chunk)
+
+
+def _http_get(url: str, **kwargs):
+    """HTTP GET with automatic fallback when local proxy env is broken."""
+    try:
+        return requests.get(url, **kwargs)
+    except ProxyError:
+        return NO_PROXY_SESSION.get(url, **kwargs)
 
 
 def extract_zip_xml_only(zip_path: Path, out_dir: Path) -> List[Path]:

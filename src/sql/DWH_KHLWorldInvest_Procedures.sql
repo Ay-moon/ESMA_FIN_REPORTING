@@ -1,4 +1,22 @@
-﻿/****** Cannot script Unresolved Entities : Server[@Name='PERSO-AJE-DELL\MSSQLSERVER01']/Database[@Name='DWH_KHLWorldInvest']/UnresolvedEntity[@Name='cur'] ******/
+﻿SET ANSI_NULLS ON
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_NULLS ON
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_NULLS ON
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_NULLS ON
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_NULLS ON
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_NULLS ON
+SET QUOTED_IDENTIFIER ON
+GO
+/****** Cannot script Unresolved Entities : Server[@Name='PERSO-AJE-DELL\MSSQLSERVER01']/Database[@Name='DWH_KHLWorldInvest']/UnresolvedEntity[@Name='cur'] ******/
 SET ANSI_NULLS ON
 SET QUOTED_IDENTIFIER ON
 CREATE TABLE [log].[ESMA_Load_Log](
@@ -876,14 +894,14 @@ BEGIN
                     WHEN MAX(CASE WHEN UPPER(e.FullName) LIKE '%EQUITY%' THEN 1 ELSE 0 END) = 1 THEN N'Equity'
                     WHEN MAX(CASE WHEN UPPER(e.FullName) LIKE '%COMMODITIES%' THEN 1 ELSE 0 END) = 1 THEN N'Commodity'
                     ELSE N'Unknown'
-                END,
+
 
             Hint_Derivative_Type =
                 CASE
                     WHEN MAX(CASE WHEN UPPER(e.FullName) LIKE '%OPTION%' THEN 1 ELSE 0 END) = 1 THEN N'Option'
                     WHEN MAX(CASE WHEN UPPER(e.FullName) LIKE '%FORWARD%' OR UPPER(e.FullName) LIKE '%FWD%' THEN 1 ELSE 0 END) = 1 THEN N'Forward'
                     ELSE N'Unknown'
-                END
+
         FROM KHLWorldInvest.stg.ESMA_INSTRUMENT_LISTING e
         WHERE e.CFI LIKE 'J%'
           AND e.FullName IS NOT NULL
@@ -927,7 +945,7 @@ BEGIN
                 WHEN 'M' THEN N'Other / Misc (souvent structuré)'
                 WHEN 'J' THEN N'Dérivés (famille J - ESMA/FIRDS)'
                 ELSE N'Unknown'
-            END,
+
 
         /* ---------- Group ---------- */
         d.[Group] =
@@ -938,13 +956,13 @@ BEGIN
                         WHEN 'P' THEN N'Preferred shares (actions de préférence)'
                         WHEN 'C' THEN N'Convertible shares (actions convertibles)'
                         ELSE N'Equity - Autre'
-                    END
+
                 WHEN 'D' THEN
                     CASE c.Grp
                         WHEN 'B' THEN N'Bonds (obligations)'
                         WHEN 'N' THEN N'Notes'
                         ELSE N'Debt - Autre'
-                    END
+
                 WHEN 'C' THEN
                     CASE c.Grp
                         WHEN 'I' THEN N'Fonds / parts (units)'
@@ -1154,15 +1172,18 @@ END;
 SET ANSI_NULLS ON
 SET QUOTED_IDENTIFIER OFF
 
-CREATE PROCEDURE [mart].[usp_Run_Daily_Mart_Load]
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    DECLARE @LaunchTs datetime2(0) = SYSDATETIME();
-    DECLARE @ScriptName nvarchar(255) = N'mart.usp_Run_Daily_Mart_Load';
-
-    DECLARE @StartStep datetime2(0);
+SET ANSI_NULLS ON
+SET QUOTED_IDENTIFIER ON
+GO
+IF OBJECT_ID('mart.usp_Load_DimIssuer', 'P') IS NOT NULL DROP PROCEDURE mart.usp_Load_DimIssuer
+GO
+/* ============================================================
+    2) PROC : mart.usp_Load_DimIssuer
+        - Source: stg.ESMA_INSTRUMENT_LISTING (IssuerLEI)
+        - Enrich: stg.STG_LEI_CDF_GOLDEN (LEFT JOIN sur LEI)
+        - MERGE: INSERT si nouveau, UPDATE si existant
+    ============================================================ */
+CREATE PROCEDURE [mart].[usp_Load_DimIssuer]
     DECLARE @EndStep datetime2(0);
     DECLARE @rc_before bigint, @rc_after bigint;
 

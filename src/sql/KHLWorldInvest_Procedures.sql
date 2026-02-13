@@ -1,6 +1,6 @@
-﻿SET ANSI_NULLS ON
-SET QUOTED_IDENTIFIER OFF
-
+﻿SET QUOTED_IDENTIFIER OFF
+GO
+USE KHLWorldInvest
 /* -----------------------------------------------------------------------------
    Logger: dynamic column mapping to [AUDIT_BI].[log].[ESMA_Load_Log] (robust + simple).
    ----------------------------------------------------------------------------- */
@@ -15,67 +15,42 @@ CREATE PROCEDURE log.usp_ESMA_WriteLog
 AS
 BEGIN
     SET NOCOUNT ON;
-    SET @EventUTC = COALESCE(@EventUTC, SYSUTCDATETIME());
+    SET @EventUTC = COALESCE(@EventUTC, SYSDATETIME());
 
     IF OBJECT_ID('[AUDIT_BI].[log].[ESMA_Load_Log]','U') IS NULL RETURN;
 
-    DECLARE @cols nvarchar(max) = N'';
-    DECLARE @vals nvarchar(max) = N'';
+    DECLARE @Complement nvarchar(1000) = NULL;
 
-    DECLARE @procCol sysname = NULL;
-    IF COL_LENGTH('[AUDIT_BI].[log].[ESMA_Load_Log]','ProcessName') IS NOT NULL SET @procCol = 'ProcessName';
-    ELSE IF COL_LENGTH('[AUDIT_BI].[log].[ESMA_Load_Log]','Process') IS NOT NULL SET @procCol = 'Process';
+    IF @RowCount IS NOT NULL
+        SET @Complement = CONCAT(N'rowcount=', CONVERT(nvarchar(30), @RowCount));
 
-    DECLARE @stepCol sysname = NULL;
-    IF COL_LENGTH('[AUDIT_BI].[log].[ESMA_Load_Log]','StepName') IS NOT NULL SET @stepCol = 'StepName';
-    ELSE IF COL_LENGTH('[AUDIT_BI].[log].[ESMA_Load_Log]','Step') IS NOT NULL SET @stepCol = 'Step';
+    IF NULLIF(LTRIM(RTRIM(COALESCE(@DetailsJson, N''))), N'') IS NOT NULL
+    BEGIN
+        SET @Complement =
+            CASE
+                WHEN @Complement IS NULL THEN LEFT(@DetailsJson, 1000)
+                ELSE LEFT(@Complement + N' | ' + @DetailsJson, 1000)
+            END;
+    END;
 
-    DECLARE @lvlCol sysname = NULL;
-    IF COL_LENGTH('[AUDIT_BI].[log].[ESMA_Load_Log]','LogLevel') IS NOT NULL SET @lvlCol = 'LogLevel';
-    ELSE IF COL_LENGTH('[AUDIT_BI].[log].[ESMA_Load_Log]','Level') IS NOT NULL SET @lvlCol = 'Level';
-
-    DECLARE @msgCol sysname = NULL;
-    IF COL_LENGTH('[AUDIT_BI].[log].[ESMA_Load_Log]','Message') IS NOT NULL SET @msgCol = 'Message';
-    ELSE IF COL_LENGTH('[AUDIT_BI].[log].[ESMA_Load_Log]','LogMessage') IS NOT NULL SET @msgCol = 'LogMessage';
-
-    DECLARE @evtCol sysname = NULL;
-    IF COL_LENGTH('[AUDIT_BI].[log].[ESMA_Load_Log]','EventUTC') IS NOT NULL SET @evtCol = 'EventUTC';
-    ELSE IF COL_LENGTH('[AUDIT_BI].[log].[ESMA_Load_Log]','EventDtmUTC') IS NOT NULL SET @evtCol = 'EventDtmUTC';
-    ELSE IF COL_LENGTH('[AUDIT_BI].[log].[ESMA_Load_Log]','LoadDtmUTC') IS NOT NULL SET @evtCol = 'LoadDtmUTC';
-
-    DECLARE @rowCol sysname = NULL;
-    IF COL_LENGTH('[AUDIT_BI].[log].[ESMA_Load_Log]','RowCount') IS NOT NULL SET @rowCol = 'RowCount';
-    ELSE IF COL_LENGTH('[AUDIT_BI].[log].[ESMA_Load_Log]','Rows') IS NOT NULL SET @rowCol = 'Rows';
-
-    DECLARE @detCol sysname = NULL;
-    IF COL_LENGTH('[AUDIT_BI].[log].[ESMA_Load_Log]','DetailsJson') IS NOT NULL SET @detCol = 'DetailsJson';
-    ELSE IF COL_LENGTH('[AUDIT_BI].[log].[ESMA_Load_Log]','Details') IS NOT NULL SET @detCol = 'Details';
-
-    IF @procCol IS NOT NULL BEGIN SET @cols += QUOTENAME(@procCol)+N','; SET @vals += N'@ProcessName,'; END;
-    IF @stepCol IS NOT NULL BEGIN SET @cols += QUOTENAME(@stepCol)+N','; SET @vals += N'@StepName,'; END;
-    IF @lvlCol  IS NOT NULL BEGIN SET @cols += QUOTENAME(@lvlCol)+N',';  SET @vals += N'@LogLevel,'; END;
-    IF @msgCol  IS NOT NULL BEGIN SET @cols += QUOTENAME(@msgCol)+N',';  SET @vals += N'@Message,'; END;
-    IF @evtCol  IS NOT NULL BEGIN SET @cols += QUOTENAME(@evtCol)+N',';  SET @vals += N'@EventUTC,'; END;
-    IF @rowCol  IS NOT NULL BEGIN SET @cols += QUOTENAME(@rowCol)+N',';  SET @vals += N'@RowCount,'; END;
-    IF @detCol  IS NOT NULL BEGIN SET @cols += QUOTENAME(@detCol)+N',';  SET @vals += N'@DetailsJson,'; END;
-
-    IF @cols = N'' RETURN;
-
-    SET @cols = LEFT(@cols, LEN(@cols)-1);
-    SET @vals = LEFT(@vals, LEN(@vals)-1);
-
-    DECLARE @sql nvarchar(max) = N'INSERT INTO [AUDIT_BI].[log].[ESMA_Load_Log] (' + @cols + N') VALUES (' + @vals + N');';
-
-    EXEC sp_executesql
-        @sql,
-        N'@ProcessName nvarchar(200),@StepName nvarchar(200),@LogLevel nvarchar(20),
-          @Message nvarchar(4000),@EventUTC datetime2(0),@RowCount int,@DetailsJson nvarchar(max)',
-        @ProcessName=@ProcessName,@StepName=@StepName,@LogLevel=@LogLevel,
-        @Message=@Message,@EventUTC=@EventUTC,@RowCount=@RowCount,@DetailsJson=@DetailsJson;
+    INSERT INTO [AUDIT_BI].[log].[ESMA_Load_Log]
+        (ScriptName, LaunchTimestamp, StartTime, Message, Element, Complement, CreatedOn)
+    VALUES
+        (
+            LEFT(COALESCE(@ProcessName, N'log.usp_ESMA_WriteLog'), 255),
+            @EventUTC,
+            @EventUTC,
+            LEFT(COALESCE(@Message, N''), 4000),
+            LEFT(COALESCE(@StepName, @LogLevel, N'LOG'), 255),
+            @Complement,
+            @EventUTC
+        );
 END
+GO
 
 SET ANSI_NULLS ON
 SET QUOTED_IDENTIFIER OFF
+GO
 
 CREATE PROCEDURE [stg].[usp_Load_ESMA_INSTRUMENTS_From_FULINS_WIDE]
 AS
@@ -558,6 +533,7 @@ END
 
 SET ANSI_NULLS ON
 SET QUOTED_IDENTIFIER OFF
+GO
 
 CREATE PROCEDURE [stg].[usp_Run_Daily_stg_Load]
 AS

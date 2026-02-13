@@ -4,14 +4,15 @@
 """
 06-LOADER_BOURSORAMA_FILE_v2.py
 
-Same business logic as original loader.
-Only refactor: configuration loading via common.config_loader.load_config()
-(no bbs_server.local.ini discovery, no raw parsing trick).
+Business logic unchanged:
+- read pipe-delimited files produced by scraper
+- load rows into SQL Server staging table
+- write load logs into SQL Server log table
+- archive processed files only when all files succeed
 """
 
 import csv
 import os
-import re
 import shutil
 import sys
 from datetime import datetime, timezone
@@ -19,8 +20,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import configparser
-import psycopg
-from psycopg import sql
+import pyodbc
 
 try:
     from dateutil import parser as dtparser
@@ -40,6 +40,7 @@ def _bootstrap_sys_path() -> None:
             return
     raise RuntimeError("Repo root not found (expected 'config' and 'src/python').")
 
+
 _bootstrap_sys_path()
 
 from common.config_loader import load_config
@@ -48,8 +49,6 @@ REPO_ROOT: Path
 
 # Reuse the repo root discovered in _bootstrap_sys_path (when running inside the ESMA repo)
 try:
-    # _bootstrap_sys_path sets sys.path and can infer REPO_ROOT by walking parents
-    # We recompute it here to keep this script standalone.
     here = Path(__file__).resolve()
     for parent in here.parents:
         if (parent / "config").exists() and (parent / "src" / "python").exists():
@@ -62,20 +61,55 @@ except Exception:
 
 
 # ============================================================
-# CONFIG (refactor-only)
+# CONFIG
 # ============================================================
+
+def _as_yes_no(value: Optional[str], default: str) -> str:
+    if value is None:
+        return default
+    normalized = str(value).strip().lower()
+    if normalized in {"1", "true", "yes", "y", "on"}:
+        return "yes"
+    if normalized in {"0", "false", "no", "n", "off"}:
+        return "no"
+    return default
+
+
+def _is_true(value: Optional[str]) -> bool:
+    if value is None:
+        return False
+    return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
+def _quote_ident(name: str) -> str:
+    name = (name or "").strip()
+    if not name:
+        raise ValueError("Empty SQL identifier")
+    return "[" + name.replace("]", "]]") + "]"
+
+
+def _fq_name(schema: str, table: str) -> str:
+    return f"{_quote_ident(schema)}.{_quote_ident(table)}"
+
+
+def _normalize_dt_sqlserver(dt: Optional[datetime]) -> Optional[datetime]:
+    if dt is None:
+        return None
+    if dt.tzinfo is not None:
+        return dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt
+
 
 def load_runtime_config() -> Tuple[dict, Path, Path]:
     """
     Expected config sections/keys:
 
-    [POSTGRES]
-    host = ...
-    port = 5432
-    database = ...
-    user = ...
-    password = ...
-    schema = bi_master_securities
+    [SQLSERVER]
+    server = ...
+    database_stg = ...
+    schema_stg = stg
+    schema_log = log
+    user/password or trusted_connection = yes
 
     [BOURSO_DATA_FILE]
     directory = D:\\...\\data\\csv\\BOURSORAMA
@@ -83,8 +117,6 @@ def load_runtime_config() -> Tuple[dict, Path, Path]:
     [BOURSO_ARCH_DIR]
     directory = D:\\...\\data\\archive\\BOURSORAMA
     """
-    # Prefer a unified config.ini if present (repo root or script folder), else fallback
-    # to the repo standard loader.
     candidates = []
     env_path = os.environ.get("KHL_CONFIG_INI") or os.environ.get("ESMA_CONFIG_INI")
     if env_path:
@@ -113,36 +145,47 @@ def load_runtime_config() -> Tuple[dict, Path, Path]:
         for n in names:
             if n in cfg:
                 return n
-        # section names are case-sensitive in configparser
         for n in names:
             for s in cfg.sections():
                 if s.lower() == n.lower():
                     return s
         return None
 
-    pg_section = pick_section("Postgres", "POSTGRES")
-    if not pg_section:
-        raise ValueError("Missing section [Postgres] (or [POSTGRES]) in config.ini")
+    sql_section = pick_section("SQLSERVER")
+    if not sql_section:
+        raise ValueError("Missing section [SQLSERVER] in config.ini")
 
-    pgsec = cfg[pg_section]
-    pg = {
-        "host": pgsec.get("host", "").strip(),
-        "port": int(pgsec.get("port", "5432").strip()),
-        "dbname": pgsec.get("database", "").strip(),
-        "user": pgsec.get("user", "").strip(),
-        "password": pgsec.get("password", "").strip(),
-        "schema": pgsec.get("schema", "bi_master_securities").strip(),
+    sqlsec = cfg[sql_section]
+    sql_cfg = {
+        "server": sqlsec.get("server", "").strip(),
+        "database": (
+            sqlsec.get("database_stg", "").strip() or sqlsec.get("database", "").strip()
+        ),
+        "schema_stg": sqlsec.get("schema_stg", "stg").strip() or "stg",
+        "schema_log": sqlsec.get("schema_log", "log").strip() or "log",
+        "user": sqlsec.get("user", "").strip(),
+        "password": sqlsec.get("password", "").strip(),
+        "driver": sqlsec.get("driver", "ODBC Driver 17 for SQL Server").strip(),
+        "encrypt": _as_yes_no(sqlsec.get("encrypt", "no"), default="no"),
+        "trust_server_certificate": _as_yes_no(
+            sqlsec.get("trust_server_certificate", "yes"), default="yes"
+        ),
+        "connection_timeout": sqlsec.get("connection_timeout", "30").strip() or "30",
     }
 
-    missing = [k for k in ("host", "dbname", "user", "password") if not pg.get(k)]
+    missing = [k for k in ("server", "database") if not sql_cfg.get(k)]
     if missing:
-        raise ValueError(f"Missing POSTGRES keys: {missing}")
+        raise ValueError(f"Missing SQLSERVER keys: {missing}")
 
-    # Input + archive directories: support both legacy and unified config.ini
+    use_trusted = _is_true(sqlsec.get("trusted_connection", ""))
+    if not use_trusted and not (sql_cfg["user"] and sql_cfg["password"]):
+        # Fallback to current Windows account when SQL credentials are not configured.
+        use_trusted = True
+    sql_cfg["use_trusted_connection"] = use_trusted
+
     data_dir: Optional[Path] = None
     arch_dir: Optional[Path] = None
 
-    # Unified
     b_section = pick_section("BOURSORAMA_PATHS")
     if b_section:
         try:
@@ -152,11 +195,12 @@ def load_runtime_config() -> Tuple[dict, Path, Path]:
             data_dir = None
             arch_dir = None
 
-    # Legacy
     if data_dir is None or arch_dir is None:
-        if pick_section("BOURSO_DATA_FILE") and pick_section("BOURSO_ARCH_DIR"):
-            data_dir = Path(cfg.get(pick_section("BOURSO_DATA_FILE"), "directory")).expanduser().resolve()
-            arch_dir = Path(cfg.get(pick_section("BOURSO_ARCH_DIR"), "directory")).expanduser().resolve()
+        data_sec = pick_section("BOURSO_DATA_FILE")
+        arch_sec = pick_section("BOURSO_ARCH_DIR")
+        if data_sec and arch_sec:
+            data_dir = Path(cfg.get(data_sec, "directory")).expanduser().resolve()
+            arch_dir = Path(cfg.get(arch_sec, "directory")).expanduser().resolve()
 
     if data_dir is None or arch_dir is None:
         raise ValueError(
@@ -169,11 +213,11 @@ def load_runtime_config() -> Tuple[dict, Path, Path]:
         raise FileNotFoundError(f"BOURSO_DATA_FILE directory not found: {data_dir}")
     arch_dir.mkdir(parents=True, exist_ok=True)
 
-    return pg, data_dir, arch_dir
+    return sql_cfg, data_dir, arch_dir
 
 
 # ============================================================
-# TABLES / COLONNES (business unchanged)
+# TABLES / COLUMNS
 # ============================================================
 
 TARGET_TABLE = "stg_bourso_price_history"
@@ -210,11 +254,12 @@ TARGET_COLS = [
 
 
 # ============================================================
-# MAPPING (business unchanged)
+# MAPPING
 # ============================================================
 
 def _strip_accents(s: str) -> str:
     import unicodedata
+
     return "".join(c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn")
 
 
@@ -305,7 +350,7 @@ def detect_produit_type(norm_row: Dict[str, str], fallback: str) -> str:
 
 
 # ============================================================
-# FILES (business unchanged)
+# FILES
 # ============================================================
 
 def iter_input_files(input_dir: Path) -> List[Path]:
@@ -324,7 +369,9 @@ def read_pipe_file(path: Path) -> List[Dict[str, str]]:
         return list(reader)
 
 
-def transform_rows(rows: List[Dict[str, str]], file_name: str) -> Tuple[List[Tuple], Optional[str], Optional[datetime], str]:
+def transform_rows(
+    rows: List[Dict[str, str]], file_name: str
+) -> Tuple[List[Tuple], Optional[str], Optional[datetime], str]:
     out: List[Tuple] = []
 
     source_url = None
@@ -334,14 +381,14 @@ def transform_rows(rows: List[Dict[str, str]], file_name: str) -> Tuple[List[Tup
     if rows:
         norm0 = {normalize_header(k): (v.strip() if isinstance(v, str) else v) for k, v in rows[0].items()}
         source_url = (norm0.get("source_url") or "").strip() or None
-        snapshot_ts = parse_date_extraction(norm0.get("date_extraction"))
+        snapshot_ts = _normalize_dt_sqlserver(parse_date_extraction(norm0.get("date_extraction")))
         produit_type = detect_produit_type(norm0, produit_type)
 
     for r in rows:
         norm = {normalize_header(k): (v.strip() if isinstance(v, str) else v) for k, v in r.items()}
         ptype = detect_produit_type(norm, guess_type_from_filename(file_name))
 
-        dt = parse_date_extraction(norm.get("date_extraction"))
+        dt = _normalize_dt_sqlserver(parse_date_extraction(norm.get("date_extraction")))
         src_url = (norm.get("source_url") or "").strip() or None
 
         rec: Dict[str, object] = {c: None for c in TARGET_COLS}
@@ -364,60 +411,195 @@ def transform_rows(rows: List[Dict[str, str]], file_name: str) -> Tuple[List[Tup
 
 
 # ============================================================
-# DB LOG + INSERT (business unchanged)
+# DB LOG + INSERT
 # ============================================================
 
-def log_started(cur, schema: str, process_name: str, script_name: str,
-                target_table: str, file_name: str, source_url: Optional[str],
-                produit_type: Optional[str], snapshot_ts: Optional[datetime]) -> int:
-    q = sql.SQL("""
-        INSERT INTO {}.{} (
+def connect_sqlserver(sql_cfg: dict) -> pyodbc.Connection:
+    parts = [
+        f"DRIVER={{{sql_cfg['driver']}}}",
+        f"SERVER={sql_cfg['server']}",
+        f"DATABASE={sql_cfg['database']}",
+        f"Encrypt={sql_cfg['encrypt']}",
+        f"TrustServerCertificate={sql_cfg['trust_server_certificate']}",
+        f"Connection Timeout={sql_cfg['connection_timeout']}",
+    ]
+    if sql_cfg.get("use_trusted_connection"):
+        parts.append("Trusted_Connection=yes")
+    else:
+        parts.append(f"UID={sql_cfg['user']}")
+        parts.append(f"PWD={sql_cfg['password']}")
+    conn_str = ";".join(parts) + ";"
+    return pyodbc.connect(conn_str, autocommit=False)
+
+
+def log_started(
+    cur,
+    log_schema: str,
+    process_name: str,
+    script_name: str,
+    target_table: str,
+    file_name: str,
+    source_url: Optional[str],
+    produit_type: Optional[str],
+    snapshot_ts: Optional[datetime],
+) -> int:
+    q = f"""
+        INSERT INTO {_fq_name(log_schema, LOG_TABLE)} (
             process_name, script_name, source_system, target_table,
             file_name, source_url, produit_type, snapshot_ts,
             status, load_start_ts
         )
-        VALUES (%s, %s, 'BOURSORAMA', %s, %s, %s, %s, %s, 'STARTED', NOW())
-        RETURNING load_log_id
-    """).format(sql.Identifier(schema), sql.Identifier(LOG_TABLE))
+        OUTPUT INSERTED.load_log_id
+        VALUES (?, ?, 'BOURSORAMA', ?, ?, ?, ?, ?, 'STARTED', SYSUTCDATETIME())
+    """
 
-    cur.execute(q, (process_name, script_name, target_table, file_name, source_url, produit_type, snapshot_ts))
-    return cur.fetchone()[0]
-
-
-def log_finished(cur, schema: str, load_log_id: int, status: str,
-                 rows_read: int, rows_inserted: int, rows_rejected: int,
-                 error_message: Optional[str]) -> None:
-    q = sql.SQL("""
-        UPDATE {}.{}
-        SET status=%s,
-            load_end_ts=NOW(),
-            rows_read=%s,
-            rows_inserted=%s,
-            rows_rejected=%s,
-            error_message=%s
-        WHERE load_log_id=%s
-    """).format(sql.Identifier(schema), sql.Identifier(LOG_TABLE))
-
-    cur.execute(q, (status, rows_read, rows_inserted, rows_rejected, error_message, load_log_id))
+    cur.execute(
+        q,
+        (
+            process_name,
+            script_name,
+            target_table,
+            file_name,
+            source_url,
+            produit_type,
+            _normalize_dt_sqlserver(snapshot_ts),
+        ),
+    )
+    row = cur.fetchone()
+    if not row:
+        raise RuntimeError("Unable to retrieve load_log_id after STARTED insert")
+    return int(row[0])
 
 
-def insert_rows(cur, schema: str, rows: List[Tuple]) -> int:
+def log_finished(
+    cur,
+    log_schema: str,
+    load_log_id: int,
+    status: str,
+    rows_read: int,
+    rows_inserted: int,
+    rows_rejected: int,
+    error_message: Optional[str],
+) -> None:
+    q = f"""
+        UPDATE {_fq_name(log_schema, LOG_TABLE)}
+        SET status=?,
+            load_end_ts=SYSUTCDATETIME(),
+            rows_read=?,
+            rows_inserted=?,
+            rows_rejected=?,
+            error_message=?
+        WHERE load_log_id=?
+    """
+
+    cur.execute(
+        q,
+        (status, rows_read, rows_inserted, rows_rejected, error_message, load_log_id),
+    )
+
+
+def insert_rows(cur, stg_schema: str, rows: List[Tuple]) -> int:
     if not rows:
         return 0
-    cols = sql.SQL(", ").join(map(sql.Identifier, TARGET_COLS))
-    placeholders = sql.SQL(", ").join(sql.Placeholder() * len(TARGET_COLS))
-    q = sql.SQL("INSERT INTO {}.{} ({}) VALUES ({})").format(
-        sql.Identifier(schema),
-        sql.Identifier(TARGET_TABLE),
-        cols,
-        placeholders,
+
+    cols = ", ".join(_quote_ident(c) for c in TARGET_COLS)
+    placeholders = ", ".join("?" for _ in TARGET_COLS)
+    q = f"INSERT INTO {_fq_name(stg_schema, TARGET_TABLE)} ({cols}) VALUES ({placeholders})"
+
+    prepared_rows = [
+        tuple(_normalize_dt_sqlserver(v) if isinstance(v, datetime) else v for v in row)
+        for row in rows
+    ]
+    try:
+        cur.fast_executemany = True
+    except Exception:
+        pass
+
+    cur.executemany(q, prepared_rows)
+    return len(prepared_rows)
+
+
+def ensure_target_tables(cur, stg_schema: str, log_schema: str) -> None:
+    stg_schema_lit = stg_schema.replace("'", "''")
+    log_schema_lit = log_schema.replace("'", "''")
+
+    cur.execute(
+        f"IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = N'{stg_schema_lit}') EXEC('CREATE SCHEMA {_quote_ident(stg_schema)}')"
     )
-    cur.executemany(q, rows)
-    return len(rows)
+    cur.execute(
+        f"IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = N'{log_schema_lit}') EXEC('CREATE SCHEMA {_quote_ident(log_schema)}')"
+    )
+
+    cur.execute(
+        f"""
+IF OBJECT_ID(N'{stg_schema_lit}.{TARGET_TABLE}', 'U') IS NULL
+BEGIN
+    CREATE TABLE {_fq_name(stg_schema, TARGET_TABLE)} (
+        [stg_id] BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [isin] NVARCHAR(100) NULL,
+        [libelle] NVARCHAR(500) NULL,
+        [produit] NVARCHAR(500) NULL,
+        [produit_type] NVARCHAR(100) NOT NULL,
+        [source_url] NVARCHAR(1000) NULL,
+        [date_extraction] DATETIME2(0) NULL,
+        [dernier] NVARCHAR(100) NULL,
+        [variation] NVARCHAR(100) NULL,
+        [ouverture] NVARCHAR(100) NULL,
+        [plus_haut] NVARCHAR(100) NULL,
+        [plus_bas] NVARCHAR(100) NULL,
+        [var_1janv] NVARCHAR(100) NULL,
+        [volume] NVARCHAR(100) NULL,
+        [achat] NVARCHAR(100) NULL,
+        [vente] NVARCHAR(100) NULL,
+        [sous_jacent] NVARCHAR(500) NULL,
+        [ss_jacent] NVARCHAR(500) NULL,
+        [borne_basse] NVARCHAR(100) NULL,
+        [borne_haute] NVARCHAR(100) NULL,
+        [barriere] NVARCHAR(100) NULL,
+        [levier] NVARCHAR(100) NULL,
+        [prix_exercice] NVARCHAR(100) NULL,
+        [maturite] NVARCHAR(100) NULL,
+        [delta] NVARCHAR(100) NULL,
+        [emetteurs] NVARCHAR(500) NULL,
+        [load_ts] DATETIME2(0) NOT NULL CONSTRAINT DF_{TARGET_TABLE}_load_ts DEFAULT SYSUTCDATETIME(),
+        [file_name] NVARCHAR(260) NOT NULL
+    )
+END
+"""
+    )
+
+    cur.execute(
+        f"""
+IF OBJECT_ID(N'{log_schema_lit}.{LOG_TABLE}', 'U') IS NULL
+BEGIN
+    CREATE TABLE {_fq_name(log_schema, LOG_TABLE)} (
+        [load_log_id] BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [process_name] NVARCHAR(200) NOT NULL,
+        [script_name] NVARCHAR(260) NULL,
+        [source_system] NVARCHAR(100) NOT NULL CONSTRAINT DF_{LOG_TABLE}_source DEFAULT N'BOURSORAMA',
+        [target_table] NVARCHAR(260) NOT NULL,
+        [file_name] NVARCHAR(260) NULL,
+        [source_url] NVARCHAR(1000) NULL,
+        [produit_type] NVARCHAR(100) NULL,
+        [snapshot_ts] DATETIME2(0) NULL,
+        [load_start_ts] DATETIME2(0) NOT NULL CONSTRAINT DF_{LOG_TABLE}_start DEFAULT SYSUTCDATETIME(),
+        [load_end_ts] DATETIME2(0) NULL,
+        [status] NVARCHAR(30) NOT NULL CONSTRAINT DF_{LOG_TABLE}_status DEFAULT N'STARTED',
+        [rows_read] BIGINT NULL,
+        [rows_inserted] BIGINT NULL,
+        [rows_rejected] BIGINT NULL,
+        [error_message] NVARCHAR(MAX) NULL,
+        [checksum] NVARCHAR(200) NULL,
+        [params] NVARCHAR(MAX) NULL,
+        [extra] NVARCHAR(MAX) NULL
+    )
+END
+"""
+    )
 
 
 # ============================================================
-# ARCHIVE (business unchanged)
+# ARCHIVE
 # ============================================================
 
 def safe_move(src: Path, dst_dir: Path) -> Path:
@@ -433,35 +615,35 @@ def safe_move(src: Path, dst_dir: Path) -> Path:
 
 
 # ============================================================
-# MAIN (business unchanged)
+# MAIN
 # ============================================================
 
 def main() -> int:
-    pg, data_dir, arch_dir = load_runtime_config()
-    schema = pg["schema"]
+    sql_cfg, data_dir, arch_dir = load_runtime_config()
+    stg_schema = sql_cfg["schema_stg"]
+    log_schema = sql_cfg["schema_log"]
 
     files = iter_input_files(data_dir)
     print(f"[INFO] DATA_DIR = {data_dir}")
     print(f"[INFO] ARCH_DIR = {arch_dir}")
-    print(f"[INFO] Fichiers trouvés = {len(files)}")
+    print(f"[INFO] Fichiers trouves = {len(files)}")
 
     if not files:
-        print("[INFO] Aucun fichier à charger")
+        print("[INFO] Aucun fichier a charger")
         return 0
 
     process_name = "boursorama_stg_load"
     script_name = Path(__file__).name
-    target_table_fq = f"{schema}.{TARGET_TABLE}"
+    target_table_fq = f"{stg_schema}.{TARGET_TABLE}"
 
     failed: List[Tuple[str, str]] = []
     processed: List[Path] = []
 
-    conn = psycopg.connect(
-        host=pg["host"], port=pg["port"], dbname=pg["dbname"],
-        user=pg["user"], password=pg["password"], connect_timeout=15
-    )
+    conn = connect_sqlserver(sql_cfg)
     try:
-        conn.autocommit = False
+        with conn.cursor() as cur:
+            ensure_target_tables(cur, stg_schema, log_schema)
+        conn.commit()
 
         for fp in files:
             file_name = fp.name
@@ -474,18 +656,34 @@ def main() -> int:
                 rows = read_pipe_file(fp)
                 rows_read = len(rows)
                 if rows_read == 0:
-                    print(f"[WARN] {file_name}: vide/non lisible -> ignoré")
+                    print(f"[WARN] {file_name}: vide/non lisible -> ignore")
                     continue
 
                 transformed, source_url, snapshot_ts, produit_type = transform_rows(rows, file_name)
 
                 with conn.cursor() as cur:
                     load_log_id = log_started(
-                        cur, schema, process_name, script_name,
-                        target_table_fq, file_name, source_url, produit_type, snapshot_ts
+                        cur,
+                        log_schema,
+                        process_name,
+                        script_name,
+                        target_table_fq,
+                        file_name,
+                        source_url,
+                        produit_type,
+                        snapshot_ts,
                     )
-                    rows_inserted = insert_rows(cur, schema, transformed)
-                    log_finished(cur, schema, load_log_id, "SUCCESS", rows_read, rows_inserted, rows_rejected, None)
+                    rows_inserted = insert_rows(cur, stg_schema, transformed)
+                    log_finished(
+                        cur,
+                        log_schema,
+                        load_log_id,
+                        "SUCCESS",
+                        rows_read,
+                        rows_inserted,
+                        rows_rejected,
+                        None,
+                    )
 
                 conn.commit()
                 processed.append(fp)
@@ -501,16 +699,32 @@ def main() -> int:
                     with conn.cursor() as cur:
                         if load_log_id is None:
                             load_log_id = log_started(
-                                cur, schema, process_name, script_name,
-                                target_table_fq, file_name, None, guess_type_from_filename(file_name), None
+                                cur,
+                                log_schema,
+                                process_name,
+                                script_name,
+                                target_table_fq,
+                                file_name,
+                                None,
+                                guess_type_from_filename(file_name),
+                                None,
                             )
-                        log_finished(cur, schema, load_log_id, "FAILED", rows_read, rows_inserted, rows_rejected, err)
+                        log_finished(
+                            cur,
+                            log_schema,
+                            load_log_id,
+                            "FAILED",
+                            rows_read,
+                            rows_inserted,
+                            rows_rejected,
+                            err,
+                        )
                     conn.commit()
                 except Exception:
                     conn.rollback()
 
         if failed:
-            print("\n[INFO] Au moins un fichier a échoué => aucun archivage effectué.")
+            print("\n[INFO] Au moins un fichier a echoue => aucun archivage effectue.")
             for fn, er in failed:
                 print(f"  - {fn}: {er}")
             return 2
@@ -521,7 +735,7 @@ def main() -> int:
             dst = safe_move(fp, arch_dir)
             moved += 1
             print(f"[ARCH] {fp.name} -> {dst}")
-        print(f"[DONE] Archivage terminé. Fichiers archivés: {moved}")
+        print(f"[DONE] Archivage termine. Fichiers archives: {moved}")
         return 0
 
     finally:

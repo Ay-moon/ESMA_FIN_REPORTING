@@ -71,6 +71,7 @@ import pyodbc
 # Shared config loader (single source of truth)
 # ----------------------------
 from common.config_loader import load_config
+from common.sqlserver import connect as connect_sqlserver
 
 # --- Identity ---
 SCRIPT_NAME = Path(__file__).name
@@ -86,18 +87,7 @@ TABLE_DLT = "stg.ESMA_DLTINS_WIDE"
 # SQL
 # ----------------------------
 def sql_conn(cfg) -> pyodbc.Connection:
-    driver = cfg["SQLSERVER"].get("driver", "ODBC Driver 17 for SQL Server")
-    server = cfg["SQLSERVER"]["server"]
-    database = cfg["SQLSERVER"]["database_stg"]
-    user = cfg["SQLSERVER"]["user"]
-    password = cfg["SQLSERVER"]["password"]
-    conn_str = (
-        f"DRIVER={{{driver}}};"
-        f"SERVER={server};DATABASE={database};"
-        f"UID={user};PWD={password};"
-        "TrustServerCertificate=yes;"
-    )
-    return pyodbc.connect(conn_str, autocommit=True)
+    return connect_sqlserver(cfg)
 
 
 def sql_log_line(conn, message, element="", complement="", file_name=""):
@@ -147,13 +137,17 @@ def list_bsv_files(csv_root: Path) -> Tuple[List[Path], List[Path], str, str]:
     dlt_date = ""
 
     if ful_root.exists():
-        ful_dirs = sorted([p for p in ful_root.iterdir() if p.is_dir() and p.name.isdigit()])
+        ful_dirs = sorted(
+            [p for p in ful_root.iterdir() if p.is_dir() and len(p.name) == 8 and p.name.isdigit()]
+        )
         if ful_dirs:
             ful_date = ful_dirs[-1].name
             ful_files = sorted(ful_dirs[-1].rglob("*.bsv"))
 
     if dlt_root.exists():
-        dlt_dirs = sorted([p for p in dlt_root.iterdir() if p.is_dir() and p.name.isdigit()])
+        dlt_dirs = sorted(
+            [p for p in dlt_root.iterdir() if p.is_dir() and len(p.name) == 8 and p.name.isdigit()]
+        )
         if dlt_dirs:
             dlt_date = dlt_dirs[-1].name
             dlt_files = sorted(dlt_dirs[-1].rglob("*.bsv"))
