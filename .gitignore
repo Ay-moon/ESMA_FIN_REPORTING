@@ -33,3 +33,6 @@ __pycache__/
 
 # --- tests locaux ---
 tests/
+
+# --- docs locaux ---
+doc/KHL_Data_Automatisation_Expression_de_Besoin.pdf
