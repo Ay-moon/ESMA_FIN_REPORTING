@@ -8,11 +8,13 @@ Provides structured, queryable logging with performance tracking
 
 import logging
 import sys
+import configparser
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Optional, Dict, Any
 from uuid import uuid4
 import pyodbc
+
+from .sqlserver import connect as connect_sqlserver
 
 
 class AuditBILogger:
@@ -48,16 +50,20 @@ class AuditBILogger:
         )
     """
     
-    def __init__(self, 
-                 etl_name: str,
-                 sql_server: str = 'PERSO-AJE-DELL\\MSSQLSERVER01',
-                 database: str = 'AUDIT_BI',
-                 schema: str = 'log'):
+    def __init__(
+        self,
+        etl_name: str,
+        sql_server: Optional[str] = None,
+        database: Optional[str] = None,
+        schema: Optional[str] = None,
+        config: Optional[configparser.ConfigParser] = None,
+    ):
         """Initialize ETL logger"""
+        self.config = config
         self.etl_name = etl_name
-        self.sql_server = sql_server
-        self.database = database
-        self.schema = schema
+        self.sql_server = sql_server or self._cfg_get("server") or "PERSO-AJE-DELL\\MSSQLSERVER01"
+        self.database = database or self._cfg_get("database_audit") or "AUDIT_BI"
+        self.schema = schema or self._cfg_get("schema_log") or "log"
         self.connection = None
         self.execution_id = None
         self.execution_log_id = None
@@ -77,17 +83,31 @@ class AuditBILogger:
             logger.addHandler(handler)
             logger.setLevel(logging.INFO)
         return logger
+
+    def _cfg_get(self, key: str, default: str = "") -> str:
+        if not self.config or "SQLSERVER" not in self.config:
+            return default
+        return self.config["SQLSERVER"].get(key, default).strip()
     
     def _get_connection(self):
         """Get connection to AUDIT_BI database"""
         if not self.connection:
             try:
-                self.connection = pyodbc.connect(
-                    f'Driver={{ODBC Driver 17 for SQL Server}};'
-                    f'Server={self.sql_server};'
-                    f'Database={self.database};'
-                    f'Trusted_Connection=yes;'
-                )
+                # Reuse the project SQL connector when config is available
+                # so this logger behaves like the other ETL scripts.
+                if self.config and "SQLSERVER" in self.config:
+                    self.connection = connect_sqlserver(
+                        self.config,
+                        database=self.database,
+                        autocommit=False,
+                    )
+                else:
+                    self.connection = pyodbc.connect(
+                        f'Driver={{ODBC Driver 17 for SQL Server}};'
+                        f'Server={self.sql_server};'
+                        f'Database={self.database};'
+                        f'Trusted_Connection=yes;'
+                    )
             except pyodbc.Error as e:
                 self.console_logger.error(f"Failed to connect to {self.database}: {e}")
                 raise
@@ -120,7 +140,7 @@ class AuditBILogger:
                 self.etl_name,
                 now,
                 now,
-                f"Execution started: {source_db} → {target_db}.{target_schema}",
+                f"Execution started: {source_db} -> {target_db}.{target_schema}",
                 self.etl_name,
                 'START'
             ))
@@ -131,8 +151,8 @@ class AuditBILogger:
             conn.commit()
             
             self.console_logger.info(
-                f"✅ Started execution {self.execution_id} "
-                f"({source_db} → {target_db}.{target_schema})"
+                f"[START] execution {self.execution_id} "
+                f"({source_db} -> {target_db}.{target_schema})"
             )
             
         except pyodbc.Error as e:
@@ -184,7 +204,7 @@ class AuditBILogger:
             conn.commit()
             
             # Log to console
-            status_symbol = "✓" if status == "OK" else "✗"
+            status_symbol = "[OK]" if status == "OK" else "[ERR]"
             self.console_logger.info(
                 f"{status_symbol} {file_name}: {status} - read={records_read}, "
                 f"inserted={records_inserted}, failed={records_failed}"
@@ -269,6 +289,10 @@ class AuditBILogger:
 
 
 # Backward compatibility: Create standard logger that uses AuditBILogger
-def create_etl_logger(etl_name: str) -> AuditBILogger:
+def create_etl_logger(
+    etl_name: str,
+    config: Optional[configparser.ConfigParser] = None,
+) -> AuditBILogger:
     """Factory function to create ETL logger"""
-    return AuditBILogger(etl_name)
+    return AuditBILogger(etl_name, config=config)
+

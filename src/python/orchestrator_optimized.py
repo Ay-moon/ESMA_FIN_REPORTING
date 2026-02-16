@@ -127,7 +127,10 @@ class ETLOrchestrator:
     def _setup_audit_logger(self) -> AuditBILogger:
         """Setup AUDIT_BI database logger"""
         try:
-            return AuditBILogger(etl_name='ETL_ORCHESTRATOR_v2')
+            return AuditBILogger(
+                etl_name='ETL_ORCHESTRATOR_v2',
+                config=self.config,
+            )
         except Exception as e:
             self.logger.warning(f"Could not connect to AUDIT_BI: {e}")
             return None

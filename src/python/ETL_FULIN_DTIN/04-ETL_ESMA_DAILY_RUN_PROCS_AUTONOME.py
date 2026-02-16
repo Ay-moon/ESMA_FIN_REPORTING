@@ -164,31 +164,35 @@ def try_sys_partitions(conn: pyodbc.Connection, full_table_name: str) -> Optiona
         cur.close()
 
 
-def count_table_rows_robust(conn: pyodbc.Connection, full_table_name: str) -> Tuple[int, str]:
+def count_table_rows_robust(
+    conn: pyodbc.Connection,
+    full_table_name: str,
+    prefer_metadata: bool = False,
+) -> Tuple[int, str]:
     """
     Retourne (rowcount, method).
     method in {COUNT, DMV, PARTITIONS, UNKNOWN}
     """
-    # 1) direct count
-    try:
-        rc = try_count_big(conn, full_table_name)
-        return rc, "COUNT"
-    except Exception:
-        pass
+    attempts = []
+    if prefer_metadata:
+        attempts = [
+            (try_dmv_partition_stats, "DMV"),
+            (try_sys_partitions, "PARTITIONS"),
+            (try_count_big, "COUNT"),
+        ]
+    else:
+        attempts = [
+            (try_count_big, "COUNT"),
+            (try_dmv_partition_stats, "DMV"),
+            (try_sys_partitions, "PARTITIONS"),
+        ]
 
-    # 2) dmv
-    try:
-        rc = try_dmv_partition_stats(conn, full_table_name)
-        return rc, "DMV"
-    except Exception:
-        pass
-
-    # 3) sys.partitions (metadata)
-    try:
-        rc = try_sys_partitions(conn, full_table_name)
-        return rc, "PARTITIONS"
-    except Exception:
-        pass
+    for fn, label in attempts:
+        try:
+            rc = fn(conn, full_table_name)
+            return rc, label
+        except Exception:
+            pass
 
     return -1, "UNKNOWN"
 
@@ -212,10 +216,15 @@ def log_counts(conn_log: pyodbc.Connection,
                tables: List[str],
                phase: str,
                run_ts: str,
-               schema_log: str) -> None:
+               schema_log: str,
+               prefer_metadata: bool = False) -> None:
     for t in tables:
         try:
-            rc, method = count_table_rows_robust(conn_data, t)
+            rc, method = count_table_rows_robust(
+                conn_data,
+                t,
+                prefer_metadata=prefer_metadata,
+            )
             sql_log_line(
                 conn_log,
                 f"ROWCOUNT_{phase}",
@@ -341,7 +350,15 @@ def main() -> int:
             sql_log_line(conn_stg, "CONN_DWH_OK", element="CONN_DWH_OK", complement=f"db_dwh={db_dwh}", schema_log=schema_log)
 
             sql_log_line(conn_stg, "ROWCOUNT_BEFORE_MART", element="ROWCOUNT_BEFORE_MART", complement=f"tables={len(MART_TABLES_TO_COUNT)} run_ts={run_ts}", schema_log=schema_log)
-            log_counts(conn_stg, conn_dwh, MART_TABLES_TO_COUNT, "BEFORE", run_ts, schema_log)
+            log_counts(
+                conn_stg,
+                conn_dwh,
+                MART_TABLES_TO_COUNT,
+                "BEFORE",
+                run_ts,
+                schema_log,
+                prefer_metadata=True,
+            )
 
             sql_log_line(conn_stg, "CALL_PROC", element="CALL_PROC", complement=f"{PROC_MART} @ {db_dwh}", schema_log=schema_log)
             proc_mart_success = exec_proc(conn_dwh, conn_stg, PROC_MART, schema_log, run_ts)
@@ -351,7 +368,15 @@ def main() -> int:
                 sql_log_line(conn_stg, "PROC_SKIPPED", element="PROC_SKIPPED", complement=f"{PROC_MART} @ {db_dwh} (no permissions)", schema_log=schema_log)
 
             sql_log_line(conn_stg, "ROWCOUNT_AFTER_MART", element="ROWCOUNT_AFTER_MART", complement=f"tables={len(MART_TABLES_TO_COUNT)} run_ts={run_ts}", schema_log=schema_log)
-            log_counts(conn_stg, conn_dwh, MART_TABLES_TO_COUNT, "AFTER", run_ts, schema_log)
+            log_counts(
+                conn_stg,
+                conn_dwh,
+                MART_TABLES_TO_COUNT,
+                "AFTER",
+                run_ts,
+                schema_log,
+                prefer_metadata=True,
+            )
 
         finally:
             try:
